@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block body_block %}
+<div class="card-header"><h3>Requests</h3></div>
+<div class="card-body">
+    <ul class="list-group">
+        {% for item in object_list %}
+            <li class="list-group-item">
+                <form class="row" method="POST">
+                    {% csrf_token %}
+                    <a class="col-md-6" href="{% url 'inventory:requisition_detail_form' pk=item.pk %}">
+                        {{ item.user.first_name }} {{ item.user.last_name }} requested for {{ item.amount }} {{ item.inventory.unit }}(s) of {{ item.inventory.name }}
+                    </a>
+                    <!-- hidden input to get requisition id -->
+                    <label for="pk" hidden></label>
+                    <input type="text" value="{{ item.pk }}" id="pk" name="pk" hidden>
+                    <div class="col-md-4">
+                        <label for="distributor" hidden></label>
+                        <select id="distributor" name="distributor" class="form-select" required>
+                            <option value="" selected disabled>Select distributor</option>
+                            {% for user in distributor_list %}
+                                <option value="{{ user.id }}">{{ user.first_name }} {{ user.last_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2" style="text-align: right;">
+                        <input type="submit" value="Approve" class="btn btn-primary">
+                    </div>
+                </form>
+            </li>
+        {% empty %}
+            <li>No request yet.</li>
+        {% endfor %}
+    </ul>
+</div>
+<div class="pagination">
+    <span class="step-links">
+        {% if object_list.has_previous %}
+            <a href="?page=1">&laquo; first</a>
+            <a href="?page={{ object_list.previous_page_number }}">previous</a>
+        {% endif %}
+
+        <span class="current">
+            Page {{ object_list.number }} of {{ object_list.paginator.num_pages }}.
+        </span>
+
+        {% if object_list.has_next %}
+            <a href="?page={{ object_list.next_page_number }}">next</a>
+            <a href="?page={{ object_list.paginator.num_pages }}">last &raquo;</a>
+        {% endif %}
+    </span>
+</div>
+{% endblock body_block %}

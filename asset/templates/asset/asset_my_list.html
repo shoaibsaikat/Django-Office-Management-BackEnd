@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% load bootstrap5 %}
+{% bootstrap_css %}
+{% bootstrap_javascript %}
+
+{% block body_block %}
+<div class="card-header"><h3>My Asset List</h3></div>
+<div class="card-body">
+    <div class="row">
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">Name</th>
+                <th scope="col">Model</th>
+                <th scope="col">Serial</th>
+                <th scope="col">Warranty Ends</th>
+                <th scope="col">Assign to</th>
+                <th scope="col">Assign</th>
+            </tr>
+            </thead>
+            <tbody>
+                {% for item in object_list %}
+                    <form class="row" method="POST">
+                        {% csrf_token %}
+                        <!-- hidden input to get asset id -->
+                        <input type="text" value="{{ item.pk }}" name="pk" hidden>
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ item.name }}</td>
+                            <td>{{ item.model }}</td>
+                            <td>{{ item.serial }}</td>
+                            <td>{{ item.purchaseDate|date:"N j, Y" }}</td>
+                            <td>
+                                <select id="assignee" name="assignee" class="form-select">
+                                    <option value="" selected disabled>Select user</option>
+                                    {% for user in user_list %}
+                                        {% if item.next_user is not None and user.pk == item.next_user.pk %}
+                                            <option value="{{ user.id }}" selected>{{ user.first_name }} {{ user.last_name }}</option>
+                                        {% else %}
+                                            <option value="{{ user.id }}">{{ user.first_name }} {{ user.last_name }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td><input type="submit" value="Assign" class="btn btn-primary"></td>
+                        </tr>
+                    </form>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="pagination">
+            <span class="step-links">
+                {% if object_list.has_previous %}
+                    <a href="?page=1">&laquo; first</a>
+                    <a href="?page={{ object_list.previous_page_number }}">previous</a>
+                {% endif %}
+
+                <span class="current">
+                    Page {{ object_list.number }} of {{ object_list.paginator.num_pages }}.
+                </span>
+
+                {% if object_list.has_next %}
+                    <a href="?page={{ object_list.next_page_number }}">next</a>
+                    <a href="?page={{ object_list.paginator.num_pages }}">last &raquo;</a>
+                {% endif %}
+            </span>
+        </div>
+    </div>
+</div>
+{% endblock body_block %}
