@@ -18,7 +18,7 @@ import json
 from .forms import SigninForm, ProfileForm, InfoForm
 from .models import Profile
 
-@csrf_exempt
+# @csrf_exempt
 def signin(request):
     if request.method == 'POST':
         user = authenticate(request, username=request.POST['username'], password=request.POST['password'])
@@ -27,7 +27,6 @@ def signin(request):
             return HttpResponse('Login Successful')
     return HttpResponse('Login Page')
 
-@csrf_exempt
 @login_required
 def signout(request):
     logout(request)
@@ -66,7 +65,7 @@ def change_manager(request):
         'form': form
     })
 
-@method_decorator(csrf_exempt, name='dispatch')
+# @method_decorator(csrf_exempt, name='dispatch')
 class ChangeInfoView(LoginRequiredMixin, FormView):
     # template_name = 'accounts/edit_profile.html'
     # form_class = InfoForm
