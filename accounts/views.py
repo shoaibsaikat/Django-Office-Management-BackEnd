@@ -7,6 +7,7 @@ from django.urls import reverse_lazy
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth.hashers import check_password
 from django.contrib.auth.forms import PasswordChangeForm
 from django.views.generic.edit import FormView
 from django.core import serializers
@@ -35,23 +36,26 @@ def signout(request):
     # return redirect('index')
     return HttpResponse('Successfully logged out!')
 
-# TODO:
 @login_required
+@csrf_exempt
 def change_password(request):
     if request.method == 'POST':
-        form = PasswordChangeForm(request.user, request.POST)
-        if form.is_valid():
-            user = form.save()
-            update_session_auth_hash(request, user)  # Important!
-            messages.success(request, 'Your password was successfully updated!')
-            return redirect('change_password')
-        else:
-            messages.error(request, 'Please correct the error below.')
-    else:
-        form = PasswordChangeForm(request.user)
-    return render(request, 'accounts/change_password.html', {
-        'form': form
-    })
+        if request.POST.get('lastpassword', False) and request.POST.get('newpassword1', False) and request.POST.get('newpassword2', False):
+            currentPasswordEntered = request.POST['lastpassword']
+            password1 = request.POST['newpassword1']
+            password2 = request.POST['newpassword2']
+            passwordMatched = check_password(currentPasswordEntered, request.user.password)
+            if passwordMatched and password1 == password2:
+                #change password code
+                user = request.user
+                user.set_password(password1)
+                user.save()
+                update_session_auth_hash(request, user)  # Important!
+                messages.success(request, 'Your password was successfully updated!')
+                return HttpResponse('Password changed successfully!')
+            else:
+                messages.error(request, 'Password not changed!')
+    return HttpResponse('Password Change Page')
 
 # TODO:
 @login_required
