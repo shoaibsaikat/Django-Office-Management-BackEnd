@@ -72,10 +72,14 @@ class AssetCreateView(LoginRequiredMixin, UserPassesTestMixin, View):
     def test_func(self):
         return self.request.user.profile.canManageAsset
 
-class AssetListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
-    model = Asset
+class AssetListView(LoginRequiredMixin, UserPassesTestMixin, View):
     paginate_by = PAGE_COUNT
     ordering = ['-purchaseDate']
+
+    def get(self, request, *args, **kwargs):
+        assets = Asset.objects.all()
+        assetJsons = [ob.as_json() for ob in assets]
+        return JsonResponse({'assets': json.dumps(assetJsons)}, status = 200)
 
     def test_func(self):
         return self.request.user.profile.canManageAsset
