@@ -27,3 +27,12 @@ class Profile(models.Model):
         except:
             profile = Profile.objects.create(user=instance)
         profile.save()
+
+    def as_json(self):
+        if self.user is not None:
+            return dict(
+                id=self.user.id,
+                first_name=self.user.first_name, 
+                last_name=self.user.last_name)
+        else:
+            return None

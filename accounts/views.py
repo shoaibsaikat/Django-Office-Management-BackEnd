@@ -1,22 +1,18 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http.response import HttpResponse
 from django.http import JsonResponse
-from django.contrib import messages
-from django.shortcuts import render, redirect
-from django.urls import reverse_lazy
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.hashers import check_password
-from django.contrib.auth.forms import PasswordChangeForm
 from django.views.generic.edit import FormView
-from django.core import serializers
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+from django.contrib.auth.models import User
+from django.core import serializers
 
 import json
 
-from .forms import SigninForm, ProfileForm, InfoForm
 from .models import Profile
 
 @csrf_exempt
@@ -25,16 +21,19 @@ def signin(request):
         user = None
         if request.POST.get('username', False) and request.POST.get('password', False):
             user = authenticate(request, username=request.POST['username'], password=request.POST['password'])
+        else:
+            return JsonResponse({'message': 'User not authenticated'}, status = 500)
         if user is not None:
             login(request, user)
-            return HttpResponse('Login Successful')
-    return HttpResponse('Login Page')
+            return JsonResponse({'message': 'Login successful'}, status = 200)
+        else:
+            return JsonResponse({'message': 'User not found'}, status = 500)
+    return JsonResponse({'message': 'Login failed'}, status = 500)
 
 @login_required
 def signout(request):
     logout(request)
-    # return redirect('index')
-    return HttpResponse('Successfully logged out!')
+    return JsonResponse({'message': 'Logged out successfully'}, status = 200)
 
 @login_required
 @csrf_exempt
@@ -51,32 +50,29 @@ def change_password(request):
                 user.set_password(password1)
                 user.save()
                 update_session_auth_hash(request, user)  # Important!
-                messages.success(request, 'Your password was successfully updated!')
-                return HttpResponse('Password changed successfully!')
+                return JsonResponse({'message': 'Password successfully updated'}, status = 200)
             else:
-                messages.error(request, 'Password not changed!')
-    return HttpResponse('Password Change Page')
+                return JsonResponse({'message': 'Password mismatch'}, status = 500)
+        else:
+            return JsonResponse({'message': 'Password not changed'}, status = 500)
+    return JsonResponse({'message': 'Invalid change request'}, status = 500)
 
 # TODO:
 @login_required
+@csrf_exempt
 def change_manager(request):
-    profile = Profile.objects.get(pk=request.user.pk)
     if request.method == 'POST':
-        form = ProfileForm(request.POST, instance=profile)
-        if form.is_valid():
-            profile.save()
-    else:
-        form = ProfileForm(instance=profile)
-    return render(request, 'accounts/change_supervisor.html', {
-        'form': form
-    })
+        profile = Profile.objects.get(pk=request.user.pk)
+        # change manager
+        return JsonResponse({'message': 'User manager changed'}, status = 200)
+    elif request.method == 'GET':
+        profiles = Profile.objects.all()
+        profileJsons = [ob.as_json() for ob in profiles]
+        return JsonResponse({'users': json.dumps(profileJsons)}, status = 200)
+    return JsonResponse({'message': 'Invalid change request'}, status = 500)
 
 @method_decorator(csrf_exempt, name='dispatch')
 class ChangeInfoView(LoginRequiredMixin, FormView):
-    # template_name = 'accounts/edit_profile.html'
-    # form_class = InfoForm
-    # success_url = reverse_lazy('accounts:change_info')
-
     def get(self, request, *args, **kwargs):
         user = {
            'first_name':  self.request.user.first_name,
@@ -92,5 +88,4 @@ class ChangeInfoView(LoginRequiredMixin, FormView):
         user.last_name = request.POST['last_name']
         user.email = request.POST['email']
         user.save()
-        # messages.success(request, 'User info updated!')
-        return HttpResponse('Changed successfully!')
+        return JsonResponse({'message': 'User info updated'}, status = 200)
