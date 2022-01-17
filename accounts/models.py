@@ -33,6 +33,7 @@ class Profile(models.Model):
             return dict(
                 id=self.user.id,
                 first_name=self.user.first_name, 
-                last_name=self.user.last_name)
+                last_name=self.user.last_name,
+                manager_id=self.supervisor.id if self.supervisor is not None else None,)
         else:
             return None

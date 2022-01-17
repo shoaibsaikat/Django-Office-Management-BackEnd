@@ -1,5 +1,4 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http.response import HttpResponse
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
@@ -9,7 +8,6 @@ from django.views.generic.edit import FormView
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.contrib.auth.models import User
-from django.core import serializers
 
 import json
 
@@ -57,14 +55,20 @@ def change_password(request):
             return JsonResponse({'message': 'Password not changed'}, status = 500)
     return JsonResponse({'message': 'Invalid change request'}, status = 500)
 
-# TODO:
 @login_required
 @csrf_exempt
 def change_manager(request):
     if request.method == 'POST':
-        profile = Profile.objects.get(pk=request.user.pk)
         # change manager
-        return JsonResponse({'message': 'User manager changed'}, status = 200)
+        if request.POST.get('manager', False):
+            pk = request.POST['manager']
+            manager = User.objects.get(pk=pk)
+            profile = Profile.objects.get(pk=request.user.pk)
+            profile.supervisor = manager
+            profile.save()
+            return JsonResponse({'message': 'User manager changed'}, status = 200)
+        else:
+            return JsonResponse({'message': 'Invalid manager'}, status = 500)
     elif request.method == 'GET':
         profiles = Profile.objects.all()
         profileJsons = [ob.as_json() for ob in profiles]
@@ -79,7 +83,6 @@ class ChangeInfoView(LoginRequiredMixin, FormView):
            'last_name': self.request.user.last_name,
            'email': self.request.user.email
         }
-        # return JsonResponse(json.loads(json.dumps(user)))
         return JsonResponse({'user': json.dumps(user)}, status = 200)
 
     def post(self, request, *args, **kwargs):
