@@ -1,21 +1,25 @@
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
-from django.contrib import messages
 from django.urls import reverse_lazy
 from django.views.generic import ListView
-from django.views.generic.edit import CreateView, UpdateView
+from django.views.generic.edit import UpdateView
 from django.views import View
 from django.views.decorators.csrf import csrf_protect
 from django.shortcuts import render, redirect
-from django.db import transaction
-from django.http import HttpResponseRedirect
+from django.http import JsonResponse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 
-from .models import Asset, AssetHistory
-from .forms import AssetCreateForm, AssetUpdateForm
+from .models import Asset, AssetHistory, STATUS_CHOICE, TYPE_CHOICE
+from .forms import AssetUpdateForm
 
-import datetime
+import time
+from time import mktime
+from datetime import datetime
+
+import json
 
 # import the logging library
 import logging
@@ -34,23 +38,36 @@ def get_paginated_date(page, list, count):
         pages = paginator.page(paginator.num_pages)
     return pages
 
-class AssetCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
-    model = Asset
-    form_class = AssetCreateForm
-    success_url = reverse_lazy('asset:list')
+@method_decorator(csrf_exempt, name='dispatch')
+class AssetCreateView(LoginRequiredMixin, UserPassesTestMixin, View):
+    def get(self, request, *args, **kwargs):
+        return JsonResponse({'status': json.dumps(STATUS_CHOICE), 'type': json.dumps(TYPE_CHOICE)}, status = 200)
+    def post(self, request, *args, **kwargs):
+        if (request.POST.get('name', False) and request.POST.get('model', False) and request.POST.get('serial', False) and
+            request.POST.get('purchaseDate', False) and request.POST.get('warranty', False) and request.POST.get('type', False) and
+            request.POST.get('status', False) and request.POST.get('description', False)):
 
-    def form_valid(self, form):
-        form.instance.user = self.request.user
-        self.object = form.save()
+            user = request.user
+            item = Asset()
+            item.name = request.POST['name']
+            item.model = request.POST['model']
+            item.serial = request.POST['serial']
+            item.purchaseDate = datetime.fromtimestamp(int(request.POST['purchaseDate']))
+            item.warranty = int(request.POST['warranty'])
+            item.type = int(request.POST['type'])
+            item.status = int(request.POST['status'])
+            item.description = request.POST['description']
+            item.user = user
+            item.save()
 
-        # saving history
-        history = AssetHistory()
-        history.fromUser = self.request.user
-        history.toUser = self.request.user
-        history.asset = self.object
-        history.save()
-
-        return HttpResponseRedirect(self.get_success_url())
+            # saving history
+            history = AssetHistory()
+            history.fromUser = self.request.user
+            history.toUser = self.request.user
+            history.asset = self.object
+            history.save()
+            return JsonResponse({'message': 'Asset created'}, status = 200)
+        return JsonResponse({'message': 'Asset creation failed'}, status = 500)
 
     def test_func(self):
         return self.request.user.profile.canManageAsset
