@@ -43,6 +43,7 @@ def get_paginated_date(page, list, count):
 class AssetCreateView(LoginRequiredMixin, UserPassesTestMixin, View):
     def get(self, request, *args, **kwargs):
         return JsonResponse({'status': json.dumps(STATUS_CHOICE), 'type': json.dumps(TYPE_CHOICE)}, status = 200)
+
     def post(self, request, *args, **kwargs):
         if (request.POST.get('name', False) and request.POST.get('model', False) and request.POST.get('serial', False) and
             request.POST.get('purchaseDate', False) and request.POST.get('warranty', False) and request.POST.get('type', False) and
@@ -106,7 +107,7 @@ class MyAssetListView(LoginRequiredMixin, View):
 
         # getting user list for dropdown
         users = User.objects.all()
-        return JsonResponse({'object_list': json.dumps(assetJsons), 'user_list': json.dumps(profileJsons)}, status = 200)
+        return JsonResponse({'asset_list': json.dumps(assetJsons), 'user_list': json.dumps(profileJsons)}, status = 200)
 
     def post(self, request, *args, **kwargs):
         asset = Asset.objects.get(pk=request.POST['pk'])
@@ -116,6 +117,7 @@ class MyAssetListView(LoginRequiredMixin, View):
             asset.save()
         return redirect('asset:my_list')
 
+@method_decorator(csrf_exempt, name='dispatch')
 class MyPendingAssetListView(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         assetList = Asset.objects.filter(next_user=self.request.user)
@@ -126,8 +128,9 @@ class MyPendingAssetListView(LoginRequiredMixin, View):
         # pagination
         page = request.GET.get('page', 1)
         assets = get_paginated_date(page, assetList, PAGE_COUNT)
+        assetJsons = [ob.as_json() for ob in assets]
 
-        return render(request, 'asset/asset_my_pending_list.html', {'object_list': assets})
+        return JsonResponse({'asset_list': json.dumps(assetJsons)}, status = 200)
 
     def post(self, request, *args, **kwargs):
         asset = Asset.objects.get(pk=request.POST['pk'])
@@ -146,12 +149,29 @@ class MyPendingAssetListView(LoginRequiredMixin, View):
 
         return redirect('asset:my_pending_list')
 
+@method_decorator(csrf_exempt, name='dispatch')
+class AssetUpdateView(LoginRequiredMixin, UserPassesTestMixin, View):
+    def get(self, request, *args, **kwargs):
+        asset = Asset.objects.get(pk=kwargs['pk'])
+        return JsonResponse({'asset': json.dumps(asset.as_json()), 'status': json.dumps(STATUS_CHOICE), 'type': json.dumps(TYPE_CHOICE)}, status = 200)
 
-class AssetUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
-    model = Asset
-    form_class = AssetUpdateForm
-    template_name_suffix = '_update'
-    success_url = reverse_lazy('asset:list')
+    def post(self, request, *args, **kwargs):
+        if (request.POST.get('name', False) and request.POST.get('model', False) and request.POST.get('serial', False) and
+            request.POST.get('purchaseDate', False) and request.POST.get('warranty', False) and request.POST.get('type', False) and
+            request.POST.get('status', False) and request.POST.get('description', False)):
+
+            item = Asset.objects.get(pk=kwargs['pk'])
+            item.name = request.POST['name']
+            item.model = request.POST['model']
+            item.serial = request.POST['serial']
+            item.purchaseDate = datetime.datetime.fromtimestamp(int(request.POST['purchaseDate']))
+            item.warranty = int(request.POST['warranty'])
+            item.type = int(request.POST['type'])
+            item.status = int(request.POST['status'])
+            item.description = request.POST['description']
+            item.save()
+            return JsonResponse({'message': 'Asset updated'}, status = 200)
+        return JsonResponse({'message': 'Asset update failed'}, status = 500)
 
     def test_func(self):
         return self.request.user.profile.canManageAsset

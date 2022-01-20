@@ -73,7 +73,6 @@ class LeaveRequestListView(LoginRequiredMixin, UserPassesTestMixin, View):
         return self.request.user.profile.canApproveLeave
 
 class LeaveDetailView(LoginRequiredMixin, UserPassesTestMixin, View):
-
     def get(self, request, *args, **kwargs):
         detail = Leave.objects.get(pk=kwargs['pk'])
         return render(request, 'leave/leave_detail.html', {'object': detail})
