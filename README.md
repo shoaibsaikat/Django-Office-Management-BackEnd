@@ -1,6 +1,12 @@
 # Django-Office-Management-BackEnd
 Office Management System using Django Backend with REST
 
+1. pip install django mysqlclient
+2. pip install django-cors-headers
+
+
+To generate requirement.txt file -> conda list -e > requirements.txt
+
 # Sign-in Javascript code
 var data = new FormData();
 data.append("username", "shoaib.rahman");

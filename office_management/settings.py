@@ -37,7 +37,8 @@ CORS_ALLOWED_ORIGINS = [
 
 # CSRF
 CSRF_TRUSTED_ORIGINS = [
-    '127.0.0.1',
+    'http://127.0.0.1',
+    'https://127.0.0.1',
 ]
 
 # Application definition
@@ -50,7 +51,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'bootstrap5',
     'accounts.apps.AccountsConfig',
     'inventory.apps.InventoryConfig',
     'leave.apps.LeaveConfig',
@@ -140,7 +140,7 @@ USE_I18N = True
 
 USE_L10N = True
 
-USE_TZ = False #Zone support is not needed as it's used internall
+USE_TZ = False #Zone support is not needed as it's used internally
 # for zone support we've to replace datetime.now by timezone.now in models
 
 
