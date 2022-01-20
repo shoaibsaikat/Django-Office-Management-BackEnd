@@ -72,7 +72,7 @@ def change_manager(request):
     elif request.method == 'GET':
         profiles = Profile.objects.all()
         profileJsons = [ob.as_json() for ob in profiles]
-        return JsonResponse({'users': json.dumps(profileJsons)}, status = 200)
+        return JsonResponse({'user_list': json.dumps(profileJsons)}, status = 200)
     return JsonResponse({'message': 'Invalid change request'}, status = 500)
 
 @method_decorator(csrf_exempt, name='dispatch')

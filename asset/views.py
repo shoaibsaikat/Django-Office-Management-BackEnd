@@ -1,3 +1,5 @@
+import imp
+from pyexpat import model
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
@@ -15,9 +17,8 @@ from django.utils.decorators import method_decorator
 from .models import Asset, AssetHistory, STATUS_CHOICE, TYPE_CHOICE
 from .forms import AssetUpdateForm
 
-import time
 from time import mktime
-from datetime import datetime
+import datetime
 
 import json
 
@@ -52,7 +53,7 @@ class AssetCreateView(LoginRequiredMixin, UserPassesTestMixin, View):
             item.name = request.POST['name']
             item.model = request.POST['model']
             item.serial = request.POST['serial']
-            item.purchaseDate = datetime.fromtimestamp(int(request.POST['purchaseDate']))
+            item.purchaseDate = datetime.datetime.fromtimestamp(int(request.POST['purchaseDate']))
             item.warranty = int(request.POST['warranty'])
             item.type = int(request.POST['type'])
             item.status = int(request.POST['status'])
@@ -79,13 +80,13 @@ class AssetListView(LoginRequiredMixin, UserPassesTestMixin, View):
     def get(self, request, *args, **kwargs):
         assets = Asset.objects.all()
         assetJsons = [ob.as_json() for ob in assets]
-        return JsonResponse({'assets': json.dumps(assetJsons)}, status = 200)
+        return JsonResponse({'asset_list': json.dumps(assetJsons)}, status = 200)
 
     def test_func(self):
         return self.request.user.profile.canManageAsset
 
+@method_decorator(csrf_exempt, name='dispatch')
 class MyAssetListView(LoginRequiredMixin, View):
-
     def get(self, request, *args, **kwargs):
         assetList = Asset.objects.filter(user=self.request.user)
         # calculating warranty last date
@@ -95,10 +96,17 @@ class MyAssetListView(LoginRequiredMixin, View):
         # pagination
         page = request.GET.get('page', 1)
         assets = get_paginated_date(page, assetList, PAGE_COUNT)
+        assetJsons = [ob.as_json() for ob in assets]
+
+        users = User.objects.all()
+        profiles = []
+        for user in users:
+            profiles.append(user.profile)
+        profileJsons = [ob.as_json() for ob in profiles]
 
         # getting user list for dropdown
         users = User.objects.all()
-        return render(request, 'asset/asset_my_list.html', {'object_list': assets, 'user_list': users})
+        return JsonResponse({'object_list': json.dumps(assetJsons), 'user_list': json.dumps(profileJsons)}, status = 200)
 
     def post(self, request, *args, **kwargs):
         asset = Asset.objects.get(pk=request.POST['pk'])
@@ -109,7 +117,6 @@ class MyAssetListView(LoginRequiredMixin, View):
         return redirect('asset:my_list')
 
 class MyPendingAssetListView(LoginRequiredMixin, View):
-
     def get(self, request, *args, **kwargs):
         assetList = Asset.objects.filter(next_user=self.request.user)
         # calculating warranty last date
