@@ -15,5 +15,18 @@ class Leave(models.Model):
     dayCount = models.PositiveIntegerField(default=0, blank=False)
     comment = models.TextField(default='', blank=False)
 
+    def as_json(self):
+        return dict(
+            title=self.title,
+            user=self.user.pk,
+            creationDate=str(self.creationDate),
+            approver=self.approver.pk,
+            approved=self.approved,
+            approveDate=str(self.approveDate),
+            startDate=str(self.startDate),
+            endDate=str(self.endDate),
+            dayCount=self.dayCount,
+            comment=self.comment,)
+
     def __str__(self):
         return super().__str__()

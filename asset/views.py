@@ -11,7 +11,6 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 
 from .models import Asset, AssetHistory, STATUS_CHOICE, TYPE_CHOICE
-from .forms import AssetUpdateForm
 
 from time import mktime
 import datetime

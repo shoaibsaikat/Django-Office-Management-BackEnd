@@ -9,11 +9,20 @@ from django.views import View
 from django.shortcuts import render, redirect
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Sum
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from django.core import serializers
 
 from datetime import datetime, date
 
 from . import forms
 from .models import Leave
+
+from time import mktime
+import datetime
+
+import json
 
 PAGE_COUNT = 10
 
@@ -110,17 +119,24 @@ def leaveApprove(request, pk):
 #         return self.request.user.profile.canApproveLeave
 
 class LeaveSummaryListView(LoginRequiredMixin, UserPassesTestMixin, View):
-
     def get(self, request, *args, **kwargs):
         year = kwargs['year']
-
         leaveList = Leave.objects.filter(approved=True, startDate__gte=date(year, 1, 1), startDate__lte=date(year, 12, 31)) \
                         .values('user', 'user__first_name', 'user__last_name') \
                         .annotate(days=Sum('dayCount'))
         # pagination
         page = request.GET.get('page', 1)
         leaves = get_paginated_date(page, leaveList, PAGE_COUNT)
-        return render(request, 'leave/leave_summary.html', {'object_list': leaves, 'year_list': YEAR_CHOICE, 'selected_year': year})
+        leaveCustomlist = []
+        print('-------' + str(leaves))
+        for i in leaves:
+            item = {
+                'user_full_name': i.user__first_name + ' ' + i.user__last_name,
+                'days': i.days,
+            }
+            leaveCustomlist.append(item)
+        # leaveJsons = [ob.as_json() for ob in leaveList]
+        return JsonResponse({'leave_list': json.dumps(leaveCustomlist), 'year_list': json.dumps(YEAR_CHOICE), 'selected_year': year}, status = 200)
 
     def test_func(self):
         return self.request.user.profile.canApproveLeave
