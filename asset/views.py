@@ -1,14 +1,10 @@
-import imp
-from pyexpat import model
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
 from django.urls import reverse_lazy
-from django.views.generic import ListView
-from django.views.generic.edit import UpdateView
 from django.views import View
 from django.views.decorators.csrf import csrf_protect
-from django.shortcuts import render, redirect
+from django.shortcuts import redirect
 from django.http import JsonResponse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.views.decorators.csrf import csrf_exempt
@@ -110,12 +106,15 @@ class MyAssetListView(LoginRequiredMixin, View):
         return JsonResponse({'asset_list': json.dumps(assetJsons), 'user_list': json.dumps(profileJsons)}, status = 200)
 
     def post(self, request, *args, **kwargs):
-        asset = Asset.objects.get(pk=request.POST['pk'])
-        # logger.warning('assignee: {}'.format(request.POST['pk']))
-        if request.POST.get('assignee', False):
-            asset.next_user = User.objects.get(pk=request.POST['assignee'])
-            asset.save()
-        return redirect('asset:my_list')
+        if (request.POST.get('pk', False)):
+            asset = Asset.objects.get(pk=request.POST['pk'])
+            # logger.warning('assignee: {}'.format(request.POST['pk']))
+            if request.POST.get('assignee', False):
+                asset.next_user = User.objects.get(pk=request.POST['assignee'])
+                asset.save()
+            return redirect('asset:my_list')
+        else:
+            return JsonResponse({'message': 'Asset assign failed'}, status = 500)
 
 @method_decorator(csrf_exempt, name='dispatch')
 class MyPendingAssetListView(LoginRequiredMixin, View):
@@ -133,21 +132,24 @@ class MyPendingAssetListView(LoginRequiredMixin, View):
         return JsonResponse({'asset_list': json.dumps(assetJsons)}, status = 200)
 
     def post(self, request, *args, **kwargs):
-        asset = Asset.objects.get(pk=request.POST['pk'])
+        if (request.POST.get('pk', False)):
+            asset = Asset.objects.get(pk=request.POST['pk'])
 
-        # saving history
-        history = AssetHistory()
-        history.fromUser = asset.user
-        history.toUser = self.request.user
-        history.asset = asset
-        history.save()
+            # saving history
+            history = AssetHistory()
+            history.fromUser = asset.user
+            history.toUser = self.request.user
+            history.asset = asset
+            history.save()
 
-        # saving asset
-        asset.user = self.request.user
-        asset.next_user = None
-        asset.save()
+            # saving asset
+            asset.user = self.request.user
+            asset.next_user = None
+            asset.save()
 
-        return redirect('asset:my_pending_list')
+            return redirect('asset:my_pending_list')
+        else:
+            return JsonResponse({'message': 'Asset assign failed'}, status = 500)
 
 @method_decorator(csrf_exempt, name='dispatch')
 class AssetUpdateView(LoginRequiredMixin, UserPassesTestMixin, View):
