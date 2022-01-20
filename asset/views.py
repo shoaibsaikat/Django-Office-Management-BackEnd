@@ -64,7 +64,7 @@ class AssetCreateView(LoginRequiredMixin, UserPassesTestMixin, View):
             history = AssetHistory()
             history.fromUser = self.request.user
             history.toUser = self.request.user
-            history.asset = self.object
+            history.asset = item
             history.save()
             return JsonResponse({'message': 'Asset created'}, status = 200)
         return JsonResponse({'message': 'Asset creation failed'}, status = 500)
