@@ -121,22 +121,15 @@ def leaveApprove(request, pk):
 class LeaveSummaryListView(LoginRequiredMixin, UserPassesTestMixin, View):
     def get(self, request, *args, **kwargs):
         year = kwargs['year']
+        # returning custom dictionary
         leaveList = Leave.objects.filter(approved=True, startDate__gte=date(year, 1, 1), startDate__lte=date(year, 12, 31)) \
                         .values('user', 'user__first_name', 'user__last_name') \
                         .annotate(days=Sum('dayCount'))
         # pagination
         page = request.GET.get('page', 1)
         leaves = get_paginated_date(page, leaveList, PAGE_COUNT)
-        leaveCustomlist = []
-        print('-------' + str(leaves))
-        for i in leaves:
-            item = {
-                'user_full_name': i.user__first_name + ' ' + i.user__last_name,
-                'days': i.days,
-            }
-            leaveCustomlist.append(item)
-        # leaveJsons = [ob.as_json() for ob in leaveList]
-        return JsonResponse({'leave_list': json.dumps(leaveCustomlist), 'year_list': json.dumps(YEAR_CHOICE), 'selected_year': year}, status = 200)
+        leaveJsons = [str(i) for i in leaves]
+        return JsonResponse({'leave_list': json.dumps(leaveJsons), 'year_list': json.dumps(YEAR_CHOICE), 'selected_year': year}, status = 200)
 
     def test_func(self):
         return self.request.user.profile.canApproveLeave
