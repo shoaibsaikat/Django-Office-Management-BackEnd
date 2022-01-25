@@ -20,13 +20,13 @@ def signin(request):
         if (request.POST.get('username', False) and request.POST.get('password', False)):
             user = authenticate(request, username=request.POST['username'], password=request.POST['password'])
         else:
-            return JsonResponse({'message': 'User not authenticated'}, status = 500)
+            return JsonResponse({'message': 'User not authenticated'}, status = 400)
         if (user is not None):
             login(request, user)
             return JsonResponse({'message': 'Login successful'}, status = 200)
         else:
-            return JsonResponse({'message': 'User not found'}, status = 500)
-    return JsonResponse({'message': 'Login failed'}, status = 500)
+            return JsonResponse({'message': 'User not found'}, status = 400)
+    return JsonResponse({'message': 'Login failed'}, status = 400)
 
 @login_required
 def signout(request):
@@ -50,10 +50,10 @@ def change_password(request):
                 update_session_auth_hash(request, user)  # Important!
                 return JsonResponse({'message': 'Password successfully updated'}, status = 200)
             else:
-                return JsonResponse({'message': 'Password mismatch'}, status = 500)
+                return JsonResponse({'message': 'Password mismatch'}, status = 400)
         else:
-            return JsonResponse({'message': 'Password not changed'}, status = 500)
-    return JsonResponse({'message': 'Invalid change request'}, status = 500)
+            return JsonResponse({'message': 'Password not changed'}, status = 400)
+    return JsonResponse({'message': 'Invalid change request'}, status = 400)
 
 @login_required
 @csrf_exempt
@@ -68,12 +68,12 @@ def change_manager(request):
             profile.save()
             return JsonResponse({'message': 'User manager changed'}, status = 200)
         else:
-            return JsonResponse({'message': 'Invalid manager'}, status = 500)
+            return JsonResponse({'message': 'Invalid manager'}, status = 400)
     elif request.method == 'GET':
         profiles = Profile.objects.all()
         profileJsons = [ob.as_json() for ob in profiles]
         return JsonResponse({'user_list': json.dumps(profileJsons)}, status = 200)
-    return JsonResponse({'message': 'Invalid change request'}, status = 500)
+    return JsonResponse({'message': 'Invalid change request'}, status = 400)
 
 @method_decorator(csrf_exempt, name='dispatch')
 class ChangeInfoView(LoginRequiredMixin, View):
@@ -93,4 +93,4 @@ class ChangeInfoView(LoginRequiredMixin, View):
             user.email = request.POST['email']
             user.save()
             return JsonResponse({'message': 'User info updated'}, status = 200)
-        return JsonResponse({'message': 'User updated error'}, status = 500)
+        return JsonResponse({'message': 'User updated error'}, status = 400)

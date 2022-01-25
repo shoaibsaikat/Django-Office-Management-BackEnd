@@ -64,7 +64,7 @@ class AssetCreateView(LoginRequiredMixin, UserPassesTestMixin, View):
             history.asset = item
             history.save()
             return JsonResponse({'message': 'Asset created'}, status = 200)
-        return JsonResponse({'message': 'Asset creation failed'}, status = 500)
+        return JsonResponse({'message': 'Asset creation failed'}, status = 400)
 
     def test_func(self):
         return self.request.user.profile.canManageAsset
@@ -113,7 +113,7 @@ class MyAssetListView(LoginRequiredMixin, View):
                 asset.save()
             return redirect('asset:my_list')
         else:
-            return JsonResponse({'message': 'Asset assign failed'}, status = 500)
+            return JsonResponse({'message': 'Asset assign failed'}, status = 400)
 
 @method_decorator(csrf_exempt, name='dispatch')
 class MyPendingAssetListView(LoginRequiredMixin, View):
@@ -148,7 +148,7 @@ class MyPendingAssetListView(LoginRequiredMixin, View):
 
             return redirect('asset:my_pending_list')
         else:
-            return JsonResponse({'message': 'Asset assign failed'}, status = 500)
+            return JsonResponse({'message': 'Asset assign failed'}, status = 400)
 
 @method_decorator(csrf_exempt, name='dispatch')
 class AssetUpdateView(LoginRequiredMixin, UserPassesTestMixin, View):
@@ -172,7 +172,7 @@ class AssetUpdateView(LoginRequiredMixin, UserPassesTestMixin, View):
             item.description = request.POST['description']
             item.save()
             return JsonResponse({'message': 'Asset updated'}, status = 200)
-        return JsonResponse({'message': 'Asset update failed'}, status = 500)
+        return JsonResponse({'message': 'Asset update failed'}, status = 400)
 
     def test_func(self):
         return self.request.user.profile.canManageAsset

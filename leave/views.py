@@ -58,7 +58,7 @@ class LeaveCreateView(LoginRequiredMixin, View):
             leave.comment = request.POST['comment']
             leave.save()
             return JsonResponse({'message': 'Leave created'}, status = 200)
-        return JsonResponse({'message': 'Leave creation failed'}, status = 500)
+        return JsonResponse({'message': 'Leave creation failed'}, status = 400)
 
 # my leaves
 class LeaveListView(LoginRequiredMixin, View):
