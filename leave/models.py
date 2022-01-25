@@ -17,6 +17,7 @@ class Leave(models.Model):
 
     def as_json(self):
         return dict(
+            id=self.pk,
             title=self.title,
             user=self.user.pk,
             creationDate=str(self.creationDate),

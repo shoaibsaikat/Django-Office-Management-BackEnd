@@ -1,26 +1,19 @@
-from django.shortcuts import render
-from django.contrib.auth.models import User
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.decorators import login_required, user_passes_test
-from django.contrib import messages
 from django.urls import reverse_lazy
-from django.views.generic.edit import CreateView
 from django.views import View
-from django.shortcuts import render, redirect
+from django.shortcuts import redirect
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Sum
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
-from django.core import serializers
 
 from datetime import datetime, date
 
-from . import forms
 from .models import Leave
 
 from time import mktime
-import datetime
 
 import json
 
@@ -42,49 +35,59 @@ def get_paginated_date(page, list, count):
         pages = paginator.page(paginator.num_pages)
     return pages
 
-class LeaveCreateView(LoginRequiredMixin, CreateView):
-    model = Leave
-    form_class = forms.LeaveForm
+@method_decorator(csrf_exempt, name='dispatch')
+class LeaveCreateView(LoginRequiredMixin, View):
     success_url = reverse_lazy('leave:my_list')
     
     def get(self, request, *args, **kwargs):
         if self.request.user.profile.supervisor is None:
-            messages.error(request, 'Add your manager first')
+            # messages.error(request, 'Add your manager first')
             return redirect('accounts:change_manager')
-        return render(request, 'leave/leave_form.html', {'form': forms.LeaveForm()})
+        return JsonResponse({}, status = 200)
 
-    def form_valid(self, form):
-        form.instance.user = self.request.user
-        form.instance.approver = self.request.user.profile.supervisor
-        return super().form_valid(form)
+    def post(self, request, *args, **kwargs):
+        if (request.POST.get('title', False) and request.POST.get('start', False) and request.POST.get('end', False) and
+            request.POST.get('days', False) and request.POST.get('comment', False)):
+            leave = Leave()
+            leave.user = self.request.user
+            leave.approver = self.request.user.profile.supervisor
+            leave.title = request.POST['title']
+            leave.startDate = datetime.fromtimestamp(int(request.POST['start']))
+            leave.endDate = datetime.fromtimestamp(int(request.POST['end']))
+            leave.dayCount = int(request.POST['days'])
+            leave.comment = request.POST['comment']
+            leave.save()
+            return JsonResponse({'message': 'Leave created'}, status = 200)
+        return JsonResponse({'message': 'Leave creation failed'}, status = 500)
 
 # my leaves
 class LeaveListView(LoginRequiredMixin, View):
-
     def get(self, request, *args, **kwargs):
         leaveList = Leave.objects.filter(user=self.request.user).order_by('-pk')
         # pagination
         page = request.GET.get('page', 1)
         leaves = get_paginated_date(page, leaveList, PAGE_COUNT)
-        return render(request, 'leave/leave_list.html', {'object_list': leaves})
+        leaveJsons = [ob.as_json() for ob in leaves]
+        return JsonResponse({'leave_list': json.dumps(leaveJsons)}, status = 200)
 
 # leaves requested to me
 class LeaveRequestListView(LoginRequiredMixin, UserPassesTestMixin, View):
-
     def get(self, request, *args, **kwargs):
         leaveList = Leave.objects.filter(approver=self.request.user, approved=False).order_by('-pk')
         # pagination
         page = request.GET.get('page', 1)
         leaves = get_paginated_date(page, leaveList, PAGE_COUNT)
-        return render(request, 'leave/leave_approval_list.html', {'object_list': leaves})
+        leaveJsons = [ob.as_json() for ob in leaves]
+        return JsonResponse({'leave_list': json.dumps(leaveJsons)}, status = 200)
 
     def test_func(self):
         return self.request.user.profile.canApproveLeave
 
+@method_decorator(csrf_exempt, name='dispatch')
 class LeaveDetailView(LoginRequiredMixin, UserPassesTestMixin, View):
     def get(self, request, *args, **kwargs):
         detail = Leave.objects.get(pk=kwargs['pk'])
-        return render(request, 'leave/leave_detail.html', {'object': detail})
+        return JsonResponse({'detail': json.dumps(detail.as_json())}, status = 200)
 
     def post(self, request, *args, **kwargs):
         leave = Leave.objects.get(pk=kwargs['pk'])
