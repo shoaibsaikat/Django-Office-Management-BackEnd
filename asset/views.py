@@ -70,11 +70,14 @@ class AssetCreateView(LoginRequiredMixin, UserPassesTestMixin, View):
         return self.request.user.profile.canManageAsset
 
 class AssetListView(LoginRequiredMixin, UserPassesTestMixin, View):
-    paginate_by = PAGE_COUNT
-    ordering = ['-purchaseDate']
-
+    # paginate_by = PAGE_COUNT
+    # ordering = ['-purchaseDate']
     def get(self, request, *args, **kwargs):
-        assets = Asset.objects.all()
+        assetList = Asset.objects.all()
+
+        # pagination
+        page = request.GET.get('page', 1)
+        assets = get_paginated_date(page, assetList, PAGE_COUNT)
         assetJsons = [ob.as_json() for ob in assets]
         return JsonResponse({'asset_list': json.dumps(assetJsons)}, status = 200)
 
@@ -94,14 +97,13 @@ class MyAssetListView(LoginRequiredMixin, View):
         assets = get_paginated_date(page, assetList, PAGE_COUNT)
         assetJsons = [ob.as_json() for ob in assets]
 
+        # getting user list for dropdown
         users = User.objects.all()
         profiles = []
         for user in users:
             profiles.append(user.profile)
         profileJsons = [ob.as_json() for ob in profiles]
 
-        # getting user list for dropdown
-        users = User.objects.all()
         return JsonResponse({'asset_list': json.dumps(assetJsons), 'user_list': json.dumps(profileJsons)}, status = 200)
 
     def post(self, request, *args, **kwargs):

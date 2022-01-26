@@ -15,6 +15,7 @@ from django.core import serializers
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+from django.contrib.auth.models import User
 
 from datetime import datetime
 
@@ -39,9 +40,14 @@ def get_paginated_date(page, list, count):
         pages = paginator.page(paginator.num_pages)
     return pages
 
-class InventoryListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
-    model = models.Inventory
-    paginate_by = PAGE_COUNT
+class InventoryListView(LoginRequiredMixin, UserPassesTestMixin, View):
+    def get(self, request, *args, **kwargs):
+        inventoryList = models.Inventory.objects.all()
+        # pagination
+        page = request.GET.get('page', 1)
+        inventories = get_paginated_date(page, inventoryList, PAGE_COUNT)
+        inventoryJsons = [ob.as_json() for ob in inventories]
+        return JsonResponse({'inventory_list': json.dumps(inventoryJsons)}, status = 200)
 
     def test_func(self):
         return self.request.user.profile.canDistributeInventory or self.request.user.profile.canApproveInventory
@@ -85,25 +91,31 @@ class RequisitionCreateView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
 class MyRequisitionListView(LoginRequiredMixin, View):
-
     def get(self, request, *args, **kwargs):
         requisitionList = models.Requisition.objects.filter(user=self.request.user).order_by('-pk')
         # pagination
         page = request.GET.get('page', 1)
         requisitions = get_paginated_date(page, requisitionList, PAGE_COUNT)
-        return render(request, 'inventory/requisition_personal_list.html', {'object_list': requisitions})
+        requisitionJsons = [ob.as_json() for ob in requisitions]
+        return JsonResponse({'requisition_list': json.dumps(requisitionJsons)}, status = 200)
 
+@method_decorator(csrf_exempt, name='dispatch')
 class RequisitionListView(LoginRequiredMixin, UserPassesTestMixin, View):
-
     def get(self, request, *args, **kwargs):
         requisitionList = models.Requisition.objects.filter(approver=self.request.user, approved=False).order_by('-pk')
         # pagination
         page = request.GET.get('page', 1)
         requisitions = get_paginated_date(page, requisitionList, PAGE_COUNT)
+        requisitionJsons = [ob.as_json() for ob in requisitions]
 
         # generating distributor list for dropdown
-        users = models.User.objects.all()
-        return render(request, 'inventory/requisition_list.html', {'object_list': requisitions, 'distributor_list': users})
+        users = User.objects.all()
+        profiles = []
+        for user in users:
+            profiles.append(user.profile)
+        profileJsons = [ob.as_json() for ob in profiles]
+
+        return JsonResponse({'requisition_list': json.dumps(requisitionJsons), 'distributor_list': json.dumps(profileJsons)}, status = 200)
 
     def post(self, request, *args, **kwargs):
         requisition = models.Requisition.objects.filter(pk=request.POST['pk']).first()
@@ -138,33 +150,35 @@ class RequisitionDetailFormView(LoginRequiredMixin, UserPassesTestMixin, View):
     def test_func(self):
         return self.request.user.profile.canDistributeInventory or self.request.user.profile.canApproveInventory
 
-class RequisitionDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
-    model = models.Requisition
+class RequisitionDetailView(LoginRequiredMixin, UserPassesTestMixin, View):
+    def get(self, request, *args, **kwargs):
+        requisition = models.Requisition.objects.get(pk=kwargs['pk'])
+        return JsonResponse({'requisition': json.dumps(requisition.as_json())}, status = 200)
 
     def test_func(self):
         return self.request.user.profile.canDistributeInventory or self.request.user.profile.canApproveInventory
 
 class RequisitionApprovedListView(LoginRequiredMixin, UserPassesTestMixin, View):
-
     def get(self, request, *args, **kwargs):
         requisitionList = models.Requisition.objects.filter(distributor=self.request.user, distributed=False).order_by('-pk')
         # pagination
         page = request.GET.get('page', 1)
         requisitions = get_paginated_date(page, requisitionList, PAGE_COUNT)
-
-        return render(request, 'inventory/requisition_approved_list.html', {'object_list': requisitions})
+        requisitionJsons = [ob.as_json() for ob in requisitions]
+        return JsonResponse({'requisition_list': json.dumps(requisitionJsons)}, status = 200)
 
     def test_func(self):
         return self.request.user.profile.canDistributeInventory
 
-class RequisitionHistoryList(LoginRequiredMixin, UserPassesTestMixin, ListView):
-    model = models.Requisition
-    paginate_by = PAGE_COUNT
-    ordering = ['-requestDate']
-    template_name = 'inventory/requisition_history.html'
-
-    def get_queryset(self):
-        return models.Requisition.objects.all().order_by('-pk')
+class RequisitionHistoryList(LoginRequiredMixin, UserPassesTestMixin, View):
+    # ordering = ['-requestDate']
+    def get(self, request, *args, **kwargs):
+        requisitionList = models.Requisition.objects.all().order_by('-pk')
+        # pagination
+        page = request.GET.get('page', 1)
+        requisitions = get_paginated_date(page, requisitionList, PAGE_COUNT)
+        requisitionJsons = [ob.as_json() for ob in requisitions]
+        return JsonResponse({'requisition_list': json.dumps(requisitionJsons)}, status = 200)
 
     def test_func(self):
         return self.request.user.profile.canDistributeInventory or self.request.user.profile.canApproveInventory
@@ -177,7 +191,7 @@ def requisitionDistribution(request, pk):
     requisition = models.Requisition.objects.filter(pk=pk).first()
     inventory = models.Inventory.objects.filter(pk=requisition.inventory.pk).first()
     if inventory.count < requisition.amount:
-        messages.error(request, 'Distribution failed! Inventory low, please add items to the inventory first')
+        return JsonResponse({'message': 'Distribution failed! Inventory low, please add items to the inventory first'}, status = 400)
     else:
         requisition.distributed = True
         requisition.distributionDate = datetime.now()
