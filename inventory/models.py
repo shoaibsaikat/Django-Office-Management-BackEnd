@@ -15,7 +15,8 @@ class Inventory(models.Model):
             id=self.pk,
             name=self.name,
             unit=self.unit,
-            count=self.count,)
+            count=self.count,
+            description=self.description,)
 
     def __str__(self):
         return self.name
