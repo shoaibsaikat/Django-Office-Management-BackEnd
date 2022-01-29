@@ -1,14 +1,18 @@
 # Django-Office-Management-BackEnd
-Office Management System using Django Backend with REST
+Office Management System using Django Backend with REST api support.
+It can be consumed by different front-ends like Angular, React or Vue.js.
 
+Some requirements:
 1. pip install django mysqlclient
 2. pip install django-cors-headers
 
+Note: To generate requirement.txt file -> conda list -e > requirements.txt
 
-To generate requirement.txt file -> conda list -e > requirements.txt
+
+
+
 
 # Sign-in Test from Browser
-
 <html>
 
 <body>
