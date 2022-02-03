@@ -23,7 +23,7 @@ def signin(request):
             return JsonResponse({'message': 'User not authenticated'}, status = 400)
         if (user is not None):
             login(request, user)
-            return JsonResponse({'message': 'Login successful'}, status = 200)
+            return JsonResponse({'user': json.dumps(user.profile.as_json())}, status = 200)
         else:
             return JsonResponse({'message': 'User not found'}, status = 400)
     return JsonResponse({'message': 'Login failed'}, status = 400)
