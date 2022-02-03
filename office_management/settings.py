@@ -30,14 +30,19 @@ ALLOWED_HOSTS = []
 
 # CORS
 
+# ALLOWED_HOSTS=['*']
+# CORS_ORIGIN_ALLOW_ALL = True
+
 CORS_ORIGIN_ALLOW_ALL = False
 CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1',
+    'http://localhost:4200',
 ]
 
 # CSRF
 CSRF_TRUSTED_ORIGINS = [
     'http://127.0.0.1',
+    'http://localhost:4200',
 ]
 
 # Application definition
