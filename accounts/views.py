@@ -29,9 +29,12 @@ def signin(request):
     return JsonResponse({'message': 'Login failed'}, status = 400)
 
 @login_required
+@csrf_exempt
 def signout(request):
-    logout(request)
-    return JsonResponse({'message': 'Logged out successfully'}, status = 200)
+    if request.method == 'POST':
+        logout(request)
+        return JsonResponse({'message': 'Logged out successfully'}, status = 200)
+    return JsonResponse({'message': 'Invalid request'}, status = 400)
 
 @login_required
 @csrf_exempt
