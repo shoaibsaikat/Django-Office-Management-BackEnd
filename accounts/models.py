@@ -34,6 +34,7 @@ class Profile(models.Model):
                 id=self.user.id,
                 first_name=self.user.first_name, 
                 last_name=self.user.last_name,
+                email = self.user.email,
                 manager_id=self.supervisor.id if self.supervisor is not None else None,)
         else:
             return None
