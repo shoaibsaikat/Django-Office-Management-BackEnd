@@ -81,12 +81,7 @@ def change_manager(request):
 @method_decorator(csrf_exempt, name='dispatch')
 class ChangeInfoView(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
-        user = {
-           'first_name':  self.request.user.first_name,
-           'last_name': self.request.user.last_name,
-           'email': self.request.user.email
-        }
-        return JsonResponse({'user': json.dumps(user)}, status = 200)
+        return JsonResponse({'user': json.dumps(self.request.user.profile.as_json())}, status = 200)
 
     def post(self, request, *args, **kwargs):
         if (request.POST.get('first_name', False) and request.POST.get('last_name', False) and request.POST.get('email', False)):
