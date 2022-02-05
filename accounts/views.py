@@ -15,7 +15,9 @@ from .models import Profile
 
 @csrf_exempt
 def signin(request):
-    if (request.method == 'POST'):
+    if request.method == 'GET' and request.user.is_authenticated:
+        return JsonResponse(request.user.profile.as_json(), status = 200)
+    elif (request.method == 'POST'):
         user = None
         if (request.POST.get('username', False) and request.POST.get('password', False)):
             user = authenticate(request, username=request.POST['username'], password=request.POST['password'])
@@ -23,7 +25,7 @@ def signin(request):
             return JsonResponse({'message': 'User not authenticated'}, status = 400)
         if (user is not None):
             login(request, user)
-            return JsonResponse({'user': json.dumps(user.profile.as_json())}, status = 200)
+            return JsonResponse(user.profile.as_json(), status = 200)
         else:
             return JsonResponse({'message': 'User not found'}, status = 400)
     return JsonResponse({'message': 'Login failed'}, status = 400)
@@ -81,7 +83,7 @@ def change_manager(request):
 @method_decorator(csrf_exempt, name='dispatch')
 class ChangeInfoView(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
-        return JsonResponse({'user': json.dumps(self.request.user.profile.as_json())}, status = 200)
+        return JsonResponse(self.request.user.profile.as_json(), status = 200)
 
     def post(self, request, *args, **kwargs):
         if (request.POST.get('first_name', False) and request.POST.get('last_name', False) and request.POST.get('email', False)):
