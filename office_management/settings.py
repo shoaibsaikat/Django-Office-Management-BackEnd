@@ -40,10 +40,19 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 # CSRF
+
 CSRF_TRUSTED_ORIGINS = [
     'http://127.0.0.1',
     'http://localhost:4200',
 ]
+
+# Django REST framework
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+}
 
 # Application definition
 
@@ -59,6 +68,7 @@ INSTALLED_APPS = [
     'inventory.apps.InventoryConfig',
     'leave.apps.LeaveConfig',
     'asset.apps.AssetConfig',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
