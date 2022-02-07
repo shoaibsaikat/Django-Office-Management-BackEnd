@@ -32,6 +32,7 @@ class Profile(models.Model):
         if self.user is not None:
             return dict(
                 id=self.user.id,
+                username=self.user.username,
                 first_name=self.user.first_name, 
                 last_name=self.user.last_name,
                 email = self.user.email,

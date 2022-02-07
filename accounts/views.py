@@ -9,8 +9,13 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.contrib.auth.models import User
 
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
+# from rest_framework.response import Response
+from rest_framework import status
 
 import json
 
@@ -22,28 +27,29 @@ class SignInView(ObtainAuthToken):
         if (request.POST.get('username', False) and request.POST.get('password', False)):
             user = authenticate(request, username=request.POST['username'], password=request.POST['password'])
         else:
-            return JsonResponse({'message': 'No credential sent'}, status = 400)
+            return JsonResponse({'detail': 'No credential sent'}, status=400)
         if (user is not None):
             login(request, user)
             token, created = Token.objects.get_or_create(user=user)
             userDict = user.profile.as_json()
             userDict['token'] = token.key
-            return JsonResponse(userDict, status = 200)
+            return JsonResponse(userDict, status=status.HTTP_200_OK)
+            # status is optional
         else:
-            return JsonResponse({'message': 'User not authenticated'}, status = 400)
+            return JsonResponse({'detail': 'User not authenticated'}, status=400)
             # NOTE: by returning status 200 we can get the message in Angular frontend.
             # If 400 is returned then the bad request is handled by Angualr's internal library and message is not sent to UI
 
-@login_required
-@csrf_exempt
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def signout(request):
     if request.method == 'POST':
-        logout(request)
-        return JsonResponse({'message': 'Logged out successfully'}, status = 200)
-    return JsonResponse({'message': 'Invalid request'}, status = 400)
+        # print('got header: ' + str(request.headers))
+        request.user.auth_token.delete()
+        return JsonResponse({'detail': 'User signed out'}, status=status.HTTP_200_OK)
 
-@login_required
-@csrf_exempt
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def change_password(request):
     if request.method == 'POST':
         if (request.POST.get('lastpassword', False) and request.POST.get('newpassword1', False) and request.POST.get('newpassword2', False)):
@@ -57,15 +63,15 @@ def change_password(request):
                 user.set_password(password1)
                 user.save()
                 update_session_auth_hash(request, user)  # Important!
-                return JsonResponse({'message': 'Password successfully updated'}, status = 200)
+                return JsonResponse({'detail': 'Password successfully updated'}, status=status.HTTP_200_OK)
             else:
-                return JsonResponse({'message': 'Password mismatch'}, status = 400)
+                return JsonResponse({'detail': 'Password mismatch'}, status=400)
         else:
-            return JsonResponse({'message': 'Password not changed'}, status = 400)
-    return JsonResponse({'message': 'Invalid change request'}, status = 400)
+            return JsonResponse({'detail': 'Password not changed'}, status=400)
+    return JsonResponse({'detail': 'Invalid change request'}, status=400)
 
-@login_required
-@csrf_exempt
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
 def change_manager(request):
     if request.method == 'POST':
         # change manager
@@ -75,19 +81,17 @@ def change_manager(request):
             profile = Profile.objects.get(pk=request.user.pk)
             profile.supervisor = manager
             profile.save()
-            return JsonResponse({'message': 'User manager changed'}, status = 200)
+            return JsonResponse({'detail': 'User manager changed'}, status=status.HTTP_200_OK)
         else:
-            return JsonResponse({'message': 'Invalid manager'}, status = 400)
+            return JsonResponse({'detail': 'Invalid manager'}, status=400)
     elif request.method == 'GET':
         profiles = Profile.objects.all()
         profileJsons = [ob.as_json() for ob in profiles]
-        return JsonResponse({'user_list': json.dumps(profileJsons)}, status = 200)
-    return JsonResponse({'message': 'Invalid change request'}, status = 400)
+        return JsonResponse({'user_list': json.dumps(profileJsons)}, status=status.HTTP_200_OK)
+    return JsonResponse({'detail': 'Invalid change request'}, status=400)
 
-@method_decorator(csrf_exempt, name='dispatch')
-class ChangeInfoView(LoginRequiredMixin, View):
-    def get(self, request, *args, **kwargs):
-        return JsonResponse(self.request.user.profile.as_json(), status = 200)
+class ChangeInfoView(LoginRequiredMixin, APIView):
+    permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         if (request.POST.get('first_name', False) and request.POST.get('last_name', False) and request.POST.get('email', False)):
@@ -96,5 +100,5 @@ class ChangeInfoView(LoginRequiredMixin, View):
             user.last_name = request.POST['last_name']
             user.email = request.POST['email']
             user.save()
-            return JsonResponse({'message': 'User info updated'}, status = 200)
-        return JsonResponse({'message': 'User updated error'}, status = 400)
+            return JsonResponse({'detail': 'User info updated'}, status=status.HTTP_200_OK)
+        return JsonResponse({'detail': 'User updated error'}, status=400)
