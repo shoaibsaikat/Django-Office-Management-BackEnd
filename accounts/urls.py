@@ -4,7 +4,7 @@ from . import views
 app_name = 'accounts'
 
 urlpatterns = [
-    path('signin/', views.signin, name='signin'),
+    path('signin/', views.SignInView.as_view(), name='signin'),
     path('signout/', views.signout, name='signout'),
     path('change/', views.change_password, name='change_password'), # change password
     path('change_manager/', views.change_manager, name='change_manager'), # update manager

@@ -9,26 +9,30 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.contrib.auth.models import User
 
+from rest_framework.authtoken.views import ObtainAuthToken
+from rest_framework.authtoken.models import Token
+
 import json
 
 from .models import Profile
 
-@csrf_exempt
-def signin(request):
-    if request.method == 'GET' and request.user.is_authenticated:
-        return JsonResponse(request.user.profile.as_json(), status = 200)
-    elif (request.method == 'POST'):
+class SignInView(ObtainAuthToken):
+    def post(self, request, *args, **kwargs):
         user = None
         if (request.POST.get('username', False) and request.POST.get('password', False)):
             user = authenticate(request, username=request.POST['username'], password=request.POST['password'])
         else:
-            return JsonResponse({'message': 'User not authenticated'}, status = 400)
+            return JsonResponse({'message': 'No credential sent'}, status = 400)
         if (user is not None):
             login(request, user)
-            return JsonResponse(user.profile.as_json(), status = 200)
+            token, created = Token.objects.get_or_create(user=user)
+            userDict = user.profile.as_json()
+            userDict['token'] = token.key
+            return JsonResponse(userDict, status = 200)
         else:
-            return JsonResponse({'message': 'User not found'}, status = 400)
-    return JsonResponse({'message': 'Login failed'}, status = 400)
+            return JsonResponse({'message': 'User not authenticated'}, status = 400)
+            # NOTE: by returning status 200 we can get the message in Angular frontend.
+            # If 400 is returned then the bad request is handled by Angualr's internal library and message is not sent to UI
 
 @login_required
 @csrf_exempt
