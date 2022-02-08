@@ -14,7 +14,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
-# from rest_framework.response import Response
+from rest_framework.parsers import JSONParser
 from rest_framework import status
 
 import json
@@ -90,15 +90,14 @@ def change_manager(request):
         return JsonResponse({'user_list': json.dumps(profileJsons)}, status=status.HTTP_200_OK)
     return JsonResponse({'detail': 'Invalid change request'}, status=400)
 
-class ChangeInfoView(LoginRequiredMixin, APIView):
+class ChangeInfoView(APIView):
     permission_classes = [IsAuthenticated]
+    parser_classes = [JSONParser]
 
-    def post(self, request, *args, **kwargs):
-        if (request.POST.get('first_name', False) and request.POST.get('last_name', False) and request.POST.get('email', False)):
-            user = request.user
-            user.first_name = request.POST['first_name']
-            user.last_name = request.POST['last_name']
-            user.email = request.POST['email']
-            user.save()
-            return JsonResponse({'detail': 'User info updated'}, status=status.HTTP_200_OK)
-        return JsonResponse({'detail': 'User updated error'}, status=400)
+    def post(self, request, format=None):
+        user = request.user
+        user.first_name = request.data['first_name']
+        user.last_name = request.data['last_name']
+        user.email = request.data['email']
+        user.save()
+        return JsonResponse({'detail': 'User info updated'}, status=status.HTTP_200_OK)
