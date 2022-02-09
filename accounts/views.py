@@ -1,12 +1,7 @@
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.hashers import check_password
-from django.views import View
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
 from django.contrib.auth.models import User
 
 from rest_framework.decorators import api_view, permission_classes, parser_classes
@@ -54,15 +49,14 @@ def signout(request):
 @parser_classes([JSONParser])
 def change_password(request):
     if request.method == 'POST':
-        if (request.POST.get('lastpassword', False) and request.POST.get('newpassword1', False) and request.POST.get('newpassword2', False)):
-            currentPasswordEntered = request.POST['lastpassword']
-            password1 = request.POST['newpassword1']
-            password2 = request.POST['newpassword2']
+        if (request.data['lastpassword'] and request.data['newpassword']):
+            currentPasswordEntered = request.data['lastpassword']
+            password = request.data['newpassword']
             passwordMatched = check_password(currentPasswordEntered, request.user.password)
-            if (passwordMatched and password1 == password2):
+            if (passwordMatched):
                 #change password code
                 user = request.user
-                user.set_password(password1)
+                user.set_password(password)
                 user.save()
                 update_session_auth_hash(request, user)  # Important!
                 return JsonResponse({'detail': 'Password successfully updated'}, status=status.HTTP_200_OK)
@@ -78,8 +72,8 @@ def change_password(request):
 def change_manager(request):
     if request.method == 'POST':
         # change manager
-        if (request.POST.get('manager', False)):
-            pk = request.POST['manager']
+        if (request.data['manager']):
+            pk = request.data['manager']
             manager = User.objects.get(pk=pk)
             profile = Profile.objects.get(pk=request.user.pk)
             profile.supervisor = manager
