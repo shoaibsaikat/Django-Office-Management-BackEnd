@@ -9,7 +9,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.contrib.auth.models import User
 
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.views import ObtainAuthToken
@@ -27,7 +27,7 @@ class SignInView(ObtainAuthToken):
         if (request.POST.get('username', False) and request.POST.get('password', False)):
             user = authenticate(request, username=request.POST['username'], password=request.POST['password'])
         else:
-            return JsonResponse({'detail': 'No credential sent'}, status=400)
+            return JsonResponse({'detail': 'No credential sent'}, status=status.HTTP_406_NOT_ACCEPTABLE)
         if (user is not None):
             login(request, user)
             token, created = Token.objects.get_or_create(user=user)
@@ -36,12 +36,13 @@ class SignInView(ObtainAuthToken):
             return JsonResponse(userDict, status=status.HTTP_200_OK)
             # status is optional
         else:
-            return JsonResponse({'detail': 'User not authenticated'}, status=400)
+            return JsonResponse({'detail': 'User not authenticated'}, status=status.HTTP_406_NOT_ACCEPTABLE)
             # NOTE: by returning status 200 we can get the message in Angular frontend.
             # If 400 is returned then the bad request is handled by Angualr's internal library and message is not sent to UI
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@parser_classes([JSONParser])
 def signout(request):
     if request.method == 'POST':
         # print('got header: ' + str(request.headers))
@@ -50,6 +51,7 @@ def signout(request):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@parser_classes([JSONParser])
 def change_password(request):
     if request.method == 'POST':
         if (request.POST.get('lastpassword', False) and request.POST.get('newpassword1', False) and request.POST.get('newpassword2', False)):
@@ -65,13 +67,14 @@ def change_password(request):
                 update_session_auth_hash(request, user)  # Important!
                 return JsonResponse({'detail': 'Password successfully updated'}, status=status.HTTP_200_OK)
             else:
-                return JsonResponse({'detail': 'Password mismatch'}, status=400)
+                return JsonResponse({'detail': 'Password mismatch'}, status=status.HTTP_406_NOT_ACCEPTABLE)
         else:
-            return JsonResponse({'detail': 'Password not changed'}, status=400)
-    return JsonResponse({'detail': 'Invalid change request'}, status=400)
+            return JsonResponse({'detail': 'Password not changed'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+    return JsonResponse({'detail': 'Invalid change request'}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
+@parser_classes([JSONParser])
 def change_manager(request):
     if request.method == 'POST':
         # change manager
@@ -83,12 +86,12 @@ def change_manager(request):
             profile.save()
             return JsonResponse({'detail': 'User manager changed'}, status=status.HTTP_200_OK)
         else:
-            return JsonResponse({'detail': 'Invalid manager'}, status=400)
+            return JsonResponse({'detail': 'Invalid manager'}, status=status.HTTP_406_NOT_ACCEPTABLE)
     elif request.method == 'GET':
         profiles = Profile.objects.all()
         profileJsons = [ob.as_json() for ob in profiles]
         return JsonResponse({'user_list': json.dumps(profileJsons)}, status=status.HTTP_200_OK)
-    return JsonResponse({'detail': 'Invalid change request'}, status=400)
+    return JsonResponse({'detail': 'Invalid change request'}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
 class ChangeInfoView(APIView):
     permission_classes = [IsAuthenticated]
