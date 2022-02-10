@@ -1,18 +1,15 @@
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.mixins import UserPassesTestMixin
 from django.contrib.auth.models import User
-from django.urls import reverse_lazy
-from django.views import View
-from django.views.decorators.csrf import csrf_protect
-from django.shortcuts import redirect
 from django.http import JsonResponse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
+
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.parsers import JSONParser
+from rest_framework import status
 
 from .models import Asset, AssetHistory, STATUS_CHOICE, TYPE_CHOICE
 
-from time import mktime
 import datetime
 
 import json
@@ -34,26 +31,36 @@ def get_paginated_date(page, list, count):
         pages = paginator.page(paginator.num_pages)
     return pages
 
-@method_decorator(csrf_exempt, name='dispatch')
-class AssetCreateView(LoginRequiredMixin, UserPassesTestMixin, View):
-    def get(self, request, *args, **kwargs):
-        return JsonResponse({'status': json.dumps(STATUS_CHOICE), 'type': json.dumps(TYPE_CHOICE)}, status = 200)
+class AssetCreateView(UserPassesTestMixin, APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [JSONParser]
 
-    def post(self, request, *args, **kwargs):
-        if (request.POST.get('name', False) and request.POST.get('model', False) and request.POST.get('serial', False) and
-            request.POST.get('purchaseDate', False) and request.POST.get('warranty', False) and request.POST.get('type', False) and
-            request.POST.get('status', False) and request.POST.get('description', False)):
+    def get(self, request, format=None):
+        return JsonResponse({
+                'status': json.dumps(STATUS_CHOICE),
+                'type': json.dumps(TYPE_CHOICE)
+            }, status = status.HTTP_200_OK)
+
+    def post(self, request, format=None):
+        if (request.data['name'] and
+            request.data['model'] and
+            request.data['serial'] and
+            request.data['purchaseDate'] and
+            request.data['warranty'] and
+            request.data['type'] and
+            request.data['status'] and
+            request.data['description']):
 
             user = request.user
             item = Asset()
-            item.name = request.POST['name']
-            item.model = request.POST['model']
-            item.serial = request.POST['serial']
-            item.purchaseDate = datetime.datetime.fromtimestamp(int(request.POST['purchaseDate']))
-            item.warranty = int(request.POST['warranty'])
-            item.type = int(request.POST['type'])
-            item.status = int(request.POST['status'])
-            item.description = request.POST['description']
+            item.name = request.data['name']
+            item.model = request.data['model']
+            item.serial = request.data['serial']
+            item.purchaseDate = datetime.datetime.fromtimestamp(int(request.data['purchaseDate']))
+            item.warranty = int(request.data['warranty'])
+            item.type = int(request.data['type'])
+            item.status = int(request.data['status'])
+            item.description = request.data['description']
             item.user = user
             item.save()
 
@@ -63,30 +70,35 @@ class AssetCreateView(LoginRequiredMixin, UserPassesTestMixin, View):
             history.toUser = self.request.user
             history.asset = item
             history.save()
-            return JsonResponse({'message': 'Asset created'}, status = 200)
-        return JsonResponse({'message': 'Asset creation failed'}, status = 400)
+            return JsonResponse({'message': 'Asset created'}, status=status.HTTP_200_OK)
+        return JsonResponse({'message': 'Asset creation failed'}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
     def test_func(self):
         return self.request.user.profile.canManageAsset
 
-class AssetListView(LoginRequiredMixin, UserPassesTestMixin, View):
+class AssetListView(UserPassesTestMixin, APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [JSONParser]
     # paginate_by = PAGE_COUNT
     # ordering = ['-purchaseDate']
-    def get(self, request, *args, **kwargs):
+
+    def get(self, request, format=None):
         assetList = Asset.objects.all()
 
         # pagination
         page = request.GET.get('page', 1)
         assets = get_paginated_date(page, assetList, PAGE_COUNT)
         assetJsons = [ob.as_json() for ob in assets]
-        return JsonResponse({'asset_list': json.dumps(assetJsons)}, status = 200)
+        return JsonResponse({'asset_list': json.dumps(assetJsons)}, status=status.HTTP_200_OK)
 
     def test_func(self):
         return self.request.user.profile.canManageAsset
 
-@method_decorator(csrf_exempt, name='dispatch')
-class MyAssetListView(LoginRequiredMixin, View):
-    def get(self, request, *args, **kwargs):
+class MyAssetListView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [JSONParser]
+
+    def get(self, request, format=None):
         assetList = Asset.objects.filter(user=self.request.user)
         # calculating warranty last date
         for i in assetList:
@@ -104,22 +116,27 @@ class MyAssetListView(LoginRequiredMixin, View):
             profiles.append(user.profile)
         profileJsons = [ob.as_json() for ob in profiles]
 
-        return JsonResponse({'asset_list': json.dumps(assetJsons), 'user_list': json.dumps(profileJsons)}, status = 200)
+        return JsonResponse({
+                'asset_list': json.dumps(assetJsons),
+                'user_list': json.dumps(profileJsons)
+            }, status = status.HTTP_200_OK)
 
-    def post(self, request, *args, **kwargs):
-        if (request.POST.get('pk', False)):
+    def post(self, request, format=None):
+        if (request.data['pk']):
             asset = Asset.objects.get(pk=request.POST['pk'])
             # logger.warning('assignee: {}'.format(request.POST['pk']))
-            if request.POST.get('assignee', False):
-                asset.next_user = User.objects.get(pk=request.POST['assignee'])
+            if (request.data['assignee']):
+                asset.next_user = User.objects.get(pk=request.data['assignee'])
                 asset.save()
-            return redirect('asset:my_list')
+            return JsonResponse({'message': 'Asset assigned'}, status=status.HTTP_200_OK)
         else:
-            return JsonResponse({'message': 'Asset assign failed'}, status = 400)
+            return JsonResponse({'message': 'Asset assign failed'}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
-@method_decorator(csrf_exempt, name='dispatch')
-class MyPendingAssetListView(LoginRequiredMixin, View):
-    def get(self, request, *args, **kwargs):
+class MyPendingAssetListView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [JSONParser]
+
+    def get(self, request, format=None):
         assetList = Asset.objects.filter(next_user=self.request.user)
         # calculating warranty last date
         for i in assetList:
@@ -130,11 +147,11 @@ class MyPendingAssetListView(LoginRequiredMixin, View):
         assets = get_paginated_date(page, assetList, PAGE_COUNT)
         assetJsons = [ob.as_json() for ob in assets]
 
-        return JsonResponse({'asset_list': json.dumps(assetJsons)}, status = 200)
+        return JsonResponse({'asset_list': json.dumps(assetJsons)}, status=status.HTTP_200_OK)
 
-    def post(self, request, *args, **kwargs):
-        if (request.POST.get('pk', False)):
-            asset = Asset.objects.get(pk=request.POST['pk'])
+    def post(self, request, format=None):
+        if (request.data['pk']):
+            asset = Asset.objects.get(pk=request.data['pk'])
 
             # saving history
             history = AssetHistory()
@@ -148,33 +165,44 @@ class MyPendingAssetListView(LoginRequiredMixin, View):
             asset.next_user = None
             asset.save()
 
-            return redirect('asset:my_pending_list')
+            return JsonResponse({'message': 'Asset assigned'}, status=status.HTTP_200_OK)
         else:
-            return JsonResponse({'message': 'Asset assign failed'}, status = 400)
+            return JsonResponse({'message': 'Asset assign failed'}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
-@method_decorator(csrf_exempt, name='dispatch')
-class AssetUpdateView(LoginRequiredMixin, UserPassesTestMixin, View):
-    def get(self, request, *args, **kwargs):
-        asset = Asset.objects.get(pk=kwargs['pk'])
-        return JsonResponse({'asset': json.dumps(asset.as_json()), 'status': json.dumps(STATUS_CHOICE), 'type': json.dumps(TYPE_CHOICE)}, status = 200)
+class AssetUpdateView(UserPassesTestMixin, APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [JSONParser]
 
-    def post(self, request, *args, **kwargs):
-        if (request.POST.get('name', False) and request.POST.get('model', False) and request.POST.get('serial', False) and
-            request.POST.get('purchaseDate', False) and request.POST.get('warranty', False) and request.POST.get('type', False) and
-            request.POST.get('status', False) and request.POST.get('description', False)):
+    def get(self, request, format=None):
+        asset = Asset.objects.get(pk=request.data['pk'])
+        return JsonResponse({
+                'asset': json.dumps(asset.as_json()),
+                'status': json.dumps(STATUS_CHOICE),
+                'type': json.dumps(TYPE_CHOICE)
+            }, status = status.HTTP_200_OK)
 
-            item = Asset.objects.get(pk=kwargs['pk'])
-            item.name = request.POST['name']
-            item.model = request.POST['model']
-            item.serial = request.POST['serial']
-            item.purchaseDate = datetime.datetime.fromtimestamp(int(request.POST['purchaseDate']))
-            item.warranty = int(request.POST['warranty'])
-            item.type = int(request.POST['type'])
-            item.status = int(request.POST['status'])
-            item.description = request.POST['description']
+    def post(self, request, format=None):
+        if (request.data['name'] and
+            request.data['model'] and
+            request.data['serial'] and
+            request.data['purchaseDate'] and
+            request.data['warranty'] and
+            request.data['type'] and
+            request.data['status'] and
+            request.data['description']):
+
+            item = Asset.objects.get(pk=request.data['pk'])
+            item.name = request.data['name']
+            item.model = request.data['model']
+            item.serial = request.data['serial']
+            item.purchaseDate = datetime.datetime.fromtimestamp(int(request.data['purchaseDate']))
+            item.warranty = int(request.data['warranty'])
+            item.type = int(request.data['type'])
+            item.status = int(request.data['status'])
+            item.description = request.data['description']
             item.save()
-            return JsonResponse({'message': 'Asset updated'}, status = 200)
-        return JsonResponse({'message': 'Asset update failed'}, status = 400)
+            return JsonResponse({'message': 'Asset updated'}, status=status.HTTP_200_OK)
+        return JsonResponse({'message': 'Asset update failed'}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
     def test_func(self):
         return self.request.user.profile.canManageAsset

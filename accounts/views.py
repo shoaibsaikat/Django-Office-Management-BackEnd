@@ -17,7 +17,7 @@ import json
 from .models import Profile
 
 class SignInView(ObtainAuthToken):
-    def post(self, request, *args, **kwargs):
+    def post(self, request, format=None):
         user = None
         if (request.POST.get('username', False) and request.POST.get('password', False)):
             user = authenticate(request, username=request.POST['username'], password=request.POST['password'])
