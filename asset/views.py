@@ -38,7 +38,7 @@ class AssetCreateView(UserPassesTestMixin, APIView):
     def get(self, request, format=None):
         return JsonResponse({
                 'status': json.dumps(STATUS_CHOICE),
-                'type': json.dumps(TYPE_CHOICE)
+                'type': json.dumps(TYPE_CHOICE),
             }, status = status.HTTP_200_OK)
 
     def post(self, request, format=None):
@@ -118,7 +118,7 @@ class MyAssetListView(APIView):
 
         return JsonResponse({
                 'asset_list': json.dumps(assetJsons),
-                'user_list': json.dumps(profileJsons)
+                'user_list': json.dumps(profileJsons),
             }, status = status.HTTP_200_OK)
 
     def post(self, request, format=None):
@@ -174,11 +174,11 @@ class AssetUpdateView(UserPassesTestMixin, APIView):
     parser_classes = [JSONParser]
 
     def get(self, request, format=None):
-        asset = Asset.objects.get(pk=request.data['pk'])
+        asset = Asset.objects.get(pk=self.kwargs.get('pk', False))
         return JsonResponse({
                 'asset': json.dumps(asset.as_json()),
                 'status': json.dumps(STATUS_CHOICE),
-                'type': json.dumps(TYPE_CHOICE)
+                'type': json.dumps(TYPE_CHOICE),
             }, status = status.HTTP_200_OK)
 
     def post(self, request, format=None):
@@ -191,7 +191,8 @@ class AssetUpdateView(UserPassesTestMixin, APIView):
             request.data['status'] and
             request.data['description']):
 
-            item = Asset.objects.get(pk=request.data['pk'])
+            # adding (self, request, *args, **kwargs) to post/get will also work to get items from url
+            item = Asset.objects.get(pk=self.kwargs.get('pk', False))
             item.name = request.data['name']
             item.model = request.data['model']
             item.serial = request.data['serial']
