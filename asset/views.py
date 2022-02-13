@@ -31,17 +31,23 @@ def get_paginated_date(page, list, count):
         pages = paginator.page(paginator.num_pages)
     return pages
 
-class AssetCreateView(UserPassesTestMixin, APIView):
+class AssetCreateView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [JSONParser]
 
     def get(self, request, format=None):
+        if (request.user.profile.canManageAsset is False):
+            return JsonResponse({'message': 'Permission Denied'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+
         return JsonResponse({
                 'status': json.dumps(STATUS_CHOICE),
                 'type': json.dumps(TYPE_CHOICE),
             }, status = status.HTTP_200_OK)
 
     def post(self, request, format=None):
+        if (request.user.profile.canManageAsset is False):
+            return JsonResponse({'message': 'Permission Denied'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+
         if (request.data['name'] and
             request.data['model'] and
             request.data['serial'] and
@@ -73,16 +79,16 @@ class AssetCreateView(UserPassesTestMixin, APIView):
             return JsonResponse({'message': 'Asset created'}, status=status.HTTP_200_OK)
         return JsonResponse({'message': 'Asset creation failed'}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
-    def test_func(self):
-        return self.request.user.profile.canManageAsset
-
-class AssetListView(UserPassesTestMixin, APIView):
+class AssetListView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [JSONParser]
     # paginate_by = PAGE_COUNT
     # ordering = ['-purchaseDate']
 
     def get(self, request, format=None):
+        if (request.user.profile.canManageAsset is False):
+            return JsonResponse({'message': 'Permission Denied'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+
         assetList = Asset.objects.all()
 
         # pagination
@@ -90,9 +96,6 @@ class AssetListView(UserPassesTestMixin, APIView):
         assets = get_paginated_date(page, assetList, PAGE_COUNT)
         assetJsons = [ob.as_json() for ob in assets]
         return JsonResponse({'asset_list': json.dumps(assetJsons)}, status=status.HTTP_200_OK)
-
-    def test_func(self):
-        return self.request.user.profile.canManageAsset
 
 class MyAssetListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -170,11 +173,14 @@ class MyPendingAssetListView(APIView):
         else:
             return JsonResponse({'message': 'Asset assign failed'}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
-class AssetUpdateView(UserPassesTestMixin, APIView):
+class AssetUpdateView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [JSONParser]
 
     def get(self, request, format=None):
+        if (request.user.profile.canManageAsset is False):
+            return JsonResponse({'message': 'Permission Denied'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+
         asset = Asset.objects.get(pk=self.kwargs.get('pk', False))
         return JsonResponse({
                 'asset': json.dumps(asset.as_json()),
@@ -183,6 +189,9 @@ class AssetUpdateView(UserPassesTestMixin, APIView):
             }, status = status.HTTP_200_OK)
 
     def post(self, request, format=None):
+        if (request.user.profile.canManageAsset is False):
+            return JsonResponse({'message': 'Permission Denied'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+
         if (request.data['name'] and
             request.data['model'] and
             request.data['serial'] and
@@ -205,6 +214,3 @@ class AssetUpdateView(UserPassesTestMixin, APIView):
             item.save()
             return JsonResponse({'message': 'Asset updated'}, status=status.HTTP_200_OK)
         return JsonResponse({'message': 'Asset update failed'}, status=status.HTTP_406_NOT_ACCEPTABLE)
-
-    def test_func(self):
-        return self.request.user.profile.canManageAsset
