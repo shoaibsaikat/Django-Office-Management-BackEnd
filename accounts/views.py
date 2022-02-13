@@ -61,7 +61,7 @@ def change_password(request):
                 update_session_auth_hash(request, user)  # Important!
                 return JsonResponse({'detail': 'Password successfully updated'}, status=status.HTTP_200_OK)
             else:
-                return JsonResponse({'detail': 'Password mismatch'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+                return JsonResponse({'detail': 'Wrong current password'}, status=status.HTTP_406_NOT_ACCEPTABLE)
         else:
             return JsonResponse({'detail': 'Password not changed'}, status=status.HTTP_406_NOT_ACCEPTABLE)
     return JsonResponse({'detail': 'Invalid change request'}, status=status.HTTP_406_NOT_ACCEPTABLE)
@@ -78,7 +78,7 @@ def change_manager(request):
             profile = Profile.objects.get(pk=request.user.pk)
             profile.supervisor = manager
             profile.save()
-            return JsonResponse({'detail': 'User manager changed'}, status=status.HTTP_200_OK)
+            return JsonResponse({'detail': 'Manager changed'}, status=status.HTTP_200_OK)
         else:
             return JsonResponse({'detail': 'Invalid manager'}, status=status.HTTP_406_NOT_ACCEPTABLE)
     elif request.method == 'GET':

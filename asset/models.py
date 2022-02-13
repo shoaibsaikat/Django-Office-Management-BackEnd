@@ -44,7 +44,7 @@ class Asset(models.Model):
             serial=self.serial,
             user=self.user.pk,
             next_user=self.next_user.pk if self.next_user is not None else None,
-            purchaseDate=str(self.purchaseDate),
+            purchase_date=str(self.purchaseDate),
             warranty=self.warranty,
             type=self.type,
             status=self.status,

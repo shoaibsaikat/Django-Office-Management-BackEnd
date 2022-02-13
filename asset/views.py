@@ -106,6 +106,7 @@ class MyAssetListView(APIView):
 
         # pagination
         page = request.GET.get('page', 1)
+        # print('got page: ' + page)
         assets = get_paginated_date(page, assetList, PAGE_COUNT)
         assetJsons = [ob.as_json() for ob in assets]
 
