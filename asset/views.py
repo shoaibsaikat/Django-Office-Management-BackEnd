@@ -1,4 +1,3 @@
-from django.contrib.auth.mixins import UserPassesTestMixin
 from django.contrib.auth.models import User
 from django.http import JsonResponse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
@@ -95,7 +94,11 @@ class AssetListView(APIView):
         page = request.GET.get('page', 1)
         assets = get_paginated_date(page, assetList, PAGE_COUNT)
         assetJsons = [ob.as_json() for ob in assets]
-        return JsonResponse({'asset_list': json.dumps(assetJsons)}, status=status.HTTP_200_OK)
+        return JsonResponse({
+                'status': json.dumps(STATUS_CHOICE),
+                'type': json.dumps(TYPE_CHOICE),
+                'asset_list': json.dumps(assetJsons),
+            }, status=status.HTTP_200_OK)
 
 class MyAssetListView(APIView):
     permission_classes = [IsAuthenticated]

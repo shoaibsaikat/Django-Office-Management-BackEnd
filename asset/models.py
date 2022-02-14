@@ -43,6 +43,8 @@ class Asset(models.Model):
             model=self.model,
             serial=self.serial,
             user=self.user.pk,
+            user_first_name=self.user.first_name,
+            user_last_name=self.user.last_name,
             next_user=self.next_user.pk if self.next_user is not None else None,
             purchase_date=str(self.purchaseDate),
             warranty=self.warranty,
