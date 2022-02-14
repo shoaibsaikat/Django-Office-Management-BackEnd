@@ -36,7 +36,7 @@ class AssetCreateView(APIView):
 
     def get(self, request, format=None):
         if (request.user.profile.canManageAsset is False):
-            return JsonResponse({'message': 'Permission Denied'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+            return JsonResponse({'detail': 'Permission Denied'}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
         return JsonResponse({
                 'status': json.dumps(STATUS_CHOICE),
@@ -45,38 +45,28 @@ class AssetCreateView(APIView):
 
     def post(self, request, format=None):
         if (request.user.profile.canManageAsset is False):
-            return JsonResponse({'message': 'Permission Denied'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+            return JsonResponse({'detail': 'Permission Denied'}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
-        if (request.data['name'] and
-            request.data['model'] and
-            request.data['serial'] and
-            request.data['purchaseDate'] and
-            request.data['warranty'] and
-            request.data['type'] and
-            request.data['status'] and
-            request.data['description']):
+        user = request.user
+        item = Asset()
+        item.name = request.data['name']
+        item.model = request.data['model']
+        item.serial = request.data['serial']
+        item.purchaseDate = datetime.datetime.fromtimestamp(int(request.data['purchaseDate']))
+        item.warranty = int(request.data['warranty'])
+        item.type = int(request.data['type'])
+        item.status = int(request.data['status'])
+        item.description = request.data['description']
+        item.user = user
+        item.save()
 
-            user = request.user
-            item = Asset()
-            item.name = request.data['name']
-            item.model = request.data['model']
-            item.serial = request.data['serial']
-            item.purchaseDate = datetime.datetime.fromtimestamp(int(request.data['purchaseDate']))
-            item.warranty = int(request.data['warranty'])
-            item.type = int(request.data['type'])
-            item.status = int(request.data['status'])
-            item.description = request.data['description']
-            item.user = user
-            item.save()
-
-            # saving history
-            history = AssetHistory()
-            history.fromUser = self.request.user
-            history.toUser = self.request.user
-            history.asset = item
-            history.save()
-            return JsonResponse({'message': 'Asset created'}, status=status.HTTP_200_OK)
-        return JsonResponse({'message': 'Asset creation failed'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+        # saving history
+        history = AssetHistory()
+        history.fromUser = self.request.user
+        history.toUser = self.request.user
+        history.asset = item
+        history.save()
+        return JsonResponse({'detail': 'Asset created'}, status=status.HTTP_200_OK)
 
 class AssetListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -86,7 +76,7 @@ class AssetListView(APIView):
 
     def get(self, request, format=None):
         if (request.user.profile.canManageAsset is False):
-            return JsonResponse({'message': 'Permission Denied'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+            return JsonResponse({'detail': 'Permission Denied'}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
         assetList = Asset.objects.all()
 
@@ -135,9 +125,9 @@ class MyAssetListView(APIView):
             if (request.data['assignee']):
                 asset.next_user = User.objects.get(pk=request.data['assignee'])
                 asset.save()
-            return JsonResponse({'message': 'Asset assigned'}, status=status.HTTP_200_OK)
+            return JsonResponse({'detail': 'Asset assigned'}, status=status.HTTP_200_OK)
         else:
-            return JsonResponse({'message': 'Asset assign failed'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+            return JsonResponse({'detail': 'Asset assign failed'}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
 class MyPendingAssetListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -172,9 +162,9 @@ class MyPendingAssetListView(APIView):
             asset.next_user = None
             asset.save()
 
-            return JsonResponse({'message': 'Asset assigned'}, status=status.HTTP_200_OK)
+            return JsonResponse({'detail': 'Asset assigned'}, status=status.HTTP_200_OK)
         else:
-            return JsonResponse({'message': 'Asset assign failed'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+            return JsonResponse({'detail': 'Asset assign failed'}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
 class AssetUpdateView(APIView):
     permission_classes = [IsAuthenticated]
@@ -182,7 +172,7 @@ class AssetUpdateView(APIView):
 
     def get(self, request, format=None):
         if (request.user.profile.canManageAsset is False):
-            return JsonResponse({'message': 'Permission Denied'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+            return JsonResponse({'detail': 'Permission Denied'}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
         asset = Asset.objects.get(pk=self.kwargs.get('pk', False))
         return JsonResponse({
@@ -193,7 +183,7 @@ class AssetUpdateView(APIView):
 
     def post(self, request, format=None):
         if (request.user.profile.canManageAsset is False):
-            return JsonResponse({'message': 'Permission Denied'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+            return JsonResponse({'detail': 'Permission Denied'}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
         if (request.data['name'] and
             request.data['model'] and
@@ -215,5 +205,5 @@ class AssetUpdateView(APIView):
             item.status = int(request.data['status'])
             item.description = request.data['description']
             item.save()
-            return JsonResponse({'message': 'Asset updated'}, status=status.HTTP_200_OK)
-        return JsonResponse({'message': 'Asset update failed'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+            return JsonResponse({'detail': 'Asset updated'}, status=status.HTTP_200_OK)
+        return JsonResponse({'detail': 'Asset update failed'}, status=status.HTTP_406_NOT_ACCEPTABLE)
