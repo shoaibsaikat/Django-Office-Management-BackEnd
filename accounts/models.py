@@ -35,7 +35,11 @@ class Profile(models.Model):
                 username=self.user.username,
                 first_name=self.user.first_name, 
                 last_name=self.user.last_name,
-                email = self.user.email,
-                manager_id=self.supervisor.id if self.supervisor is not None else None,)
+                email=self.user.email,
+                manager_id=self.supervisor.id if self.supervisor is not None else None,
+                can_distribute_inventory=self.canDistributeInventory,
+                can_approve_inventory=self.canApproveInventory,
+                can_approve_leave=self.canApproveLeave,
+                can_manage_asset=self.canManageAsset,)
         else:
             return None

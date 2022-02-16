@@ -119,9 +119,9 @@ class MyAssetListView(APIView):
             }, status = status.HTTP_200_OK)
 
     def post(self, request, format=None):
-        if (request.data['pk']):
-            asset = Asset.objects.get(pk=request.POST['pk'])
-            # logger.warning('assignee: {}'.format(request.POST['pk']))
+        if (request.data['id']):
+            asset = Asset.objects.get(pk=request.data['id'])
+            # logger.warning('assignee: {}'.format(request.data['pk']))
             if (request.data['assignee']):
                 asset.next_user = User.objects.get(pk=request.data['assignee'])
                 asset.save()
