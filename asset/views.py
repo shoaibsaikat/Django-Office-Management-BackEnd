@@ -122,9 +122,11 @@ class MyAssetListView(APIView):
         if (request.data['pk']):
             asset = Asset.objects.get(pk=request.data['pk'])
             # logger.warning('assignee: {}'.format(request.data['pk']))
-            if (request.data['assignee']):
+            if (request.data['assignee'] and asset.next_user is None):
                 asset.next_user = User.objects.get(pk=request.data['assignee'])
                 asset.save()
+            else:
+                return JsonResponse({'detail': 'Asset is already assigned to someone else'}, status=status.HTTP_406_NOT_ACCEPTABLE)
             return JsonResponse({'detail': 'Asset assigned'}, status=status.HTTP_200_OK)
         else:
             return JsonResponse({'detail': 'Asset assign failed'}, status=status.HTTP_406_NOT_ACCEPTABLE)
