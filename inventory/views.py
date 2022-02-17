@@ -36,15 +36,15 @@ class InventoryListView(APIView):
     parser_classes = [JSONParser]
 
     def get(self, request, *args, **kwargs):
+        if (request.user.profile.canDistributeInventory is False and request.user.profile.canApproveInventory is False):
+            return JsonResponse({'detail': 'Permission denied.'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+
         inventoryList = models.Inventory.objects.all()
         # pagination
         page = request.GET.get('page', 1)
         inventories = get_paginated_date(page, inventoryList, PAGE_COUNT)
         inventoryJsons = [ob.as_json() for ob in inventories]
         return JsonResponse({'inventory_list': json.dumps(inventoryJsons)}, status=status.HTTP_200_OK)
-
-    # def test_func(self):
-    #     return self.request.user.profile.canDistributeInventory or self.request.user.profile.canApproveInventory
 
 class InventoryCreateView(APIView):
     permission_classes = [IsAuthenticated]
@@ -76,7 +76,7 @@ class InventoryUpdateView(APIView):
         inventory.unit = request.data['unit']
         inventory.count = request.data['count']
         inventory.save()
-        return JsonResponse({'detail': 'Inventory updated'}, status=status.HTTP_200_OK)
+        return JsonResponse({'detail': 'Inventory updated.'}, status=status.HTTP_200_OK)
 
     # def test_func(self):
     #     return self.request.user.profile.canDistributeInventory or self.request.user.profile.canApproveInventory
@@ -227,7 +227,7 @@ def requisitionDistribution(request, pk):
     requisition = models.Requisition.objects.filter(pk=pk).first()
     inventory = models.Inventory.objects.filter(pk=requisition.inventory.pk).first()
     if (inventory.count < requisition.amount):
-        return JsonResponse({'detail': 'Distribution failed! Inventory low, please add items to the inventory first'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+        return JsonResponse({'detail': 'Distribution failed! Inventory low, please add items to the inventory first.'}, status=status.HTTP_406_NOT_ACCEPTABLE)
     else:
         requisition.distributed = True
         requisition.distributionDate = datetime.now()
@@ -236,13 +236,17 @@ def requisitionDistribution(request, pk):
         inventory.save()
     return JsonResponse({}, status=status.HTTP_200_OK)
 
+@api_view(['POST'])
 @permission_classes([IsAuthenticated])
-# @user_passes_test(lambda u: u.profile.canDistributeInventory or u.profile.canApproveInventory)
-def inventoryQuickEdit(request, pk, amount):
-    item = models.Inventory.objects.get(pk=pk)
-    item.count = amount
+@parser_classes([JSONParser])
+def inventoryQuickEdit(request):
+    if (request.user.profile.canDistributeInventory is False and request.user.profile.canApproveInventory is False):
+        return JsonResponse({'detail': 'Permission denied.'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+
+    item = models.Inventory.objects.get(pk=request.data['pk'])
+    item.count = request.data['amount']
     item.save()
-    return JsonResponse({}, status=status.HTTP_200_OK)
+    return JsonResponse({'detail': 'Amount updated.'}, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
 @parser_classes([JSONParser])
