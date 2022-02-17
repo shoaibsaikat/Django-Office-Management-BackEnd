@@ -182,40 +182,25 @@ class AssetUpdateView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [JSONParser]
 
-    def get(self, request, format=None):
+    def get(self, request, *args, **kwargs):
         if (request.user.profile.canManageAsset is False):
             return JsonResponse({'detail': 'Permission Denied'}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
-        asset = Asset.objects.get(pk=self.kwargs.get('pk', False))
+        asset = Asset.objects.get(pk=self.kwargs['pk'])
         return JsonResponse({
                 'asset': json.dumps(asset.as_json()),
                 'status': json.dumps(STATUS_CHOICE),
-                'type': json.dumps(TYPE_CHOICE),
             }, status = status.HTTP_200_OK)
 
-    def post(self, request, format=None):
+    def post(self, request, *args, **kwargs):
         if (request.user.profile.canManageAsset is False):
             return JsonResponse({'detail': 'Permission Denied'}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
-        if (request.data['name'] and
-            request.data['model'] and
-            request.data['serial'] and
-            request.data['purchaseDate'] and
-            request.data['warranty'] and
-            request.data['type'] and
-            request.data['status'] and
-            request.data['description']):
-
-            # adding (self, request, *args, **kwargs) to post/get will also work to get items from url
-            item = Asset.objects.get(pk=self.kwargs.get('pk', False))
-            item.name = request.data['name']
-            item.model = request.data['model']
-            item.serial = request.data['serial']
-            item.purchaseDate = datetime.datetime.fromtimestamp(int(request.data['purchaseDate']))
-            item.warranty = int(request.data['warranty'])
-            item.type = int(request.data['type'])
-            item.status = int(request.data['status'])
-            item.description = request.data['description']
-            item.save()
-            return JsonResponse({'detail': 'Asset updated'}, status=status.HTTP_200_OK)
-        return JsonResponse({'detail': 'Asset update failed'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+        # adding (self, request, *args, **kwargs) to post/get will also work to get items from url
+        item = Asset.objects.get(pk=self.kwargs['pk'])
+        item.name = request.data['name']
+        item.warranty = int(request.data['warranty'])
+        item.status = int(request.data['status'])
+        item.description = request.data['description']
+        item.save()
+        return JsonResponse({'detail': 'Asset updated'}, status=status.HTTP_200_OK)

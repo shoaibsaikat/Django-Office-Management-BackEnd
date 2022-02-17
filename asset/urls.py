@@ -9,5 +9,5 @@ urlpatterns = [
     path('list/', views.AssetListView.as_view(), name='list'),
     path('my_list/', views.MyAssetListView.as_view(), name='my_list'),
     path('my_pending_list/', views.MyPendingAssetListView.as_view(), name='my_pending_list'),
-    path('edit/<int:pk>', views.AssetUpdateView.as_view(), name='update'),
+    path('edit/<int:pk>/', views.AssetUpdateView.as_view(), name='update'),
 ]
