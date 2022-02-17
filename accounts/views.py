@@ -17,7 +17,7 @@ import json
 from .models import Profile
 
 class SignInView(ObtainAuthToken):
-    def post(self, request, format=None):
+    def post(self, request, *args, **kwargs):
         user = None
         if (request.POST.get('username', False) and request.POST.get('password', False)):
             user = authenticate(request, username=request.POST['username'], password=request.POST['password'])
@@ -91,7 +91,7 @@ class ChangeInfoView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [JSONParser]
 
-    def post(self, request, format=None):
+    def post(self, request, *args, **kwargs):
         user = request.user
         user.first_name = request.data['first_name']
         user.last_name = request.data['last_name']

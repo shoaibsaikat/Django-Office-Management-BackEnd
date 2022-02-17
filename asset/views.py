@@ -34,7 +34,7 @@ class AssetCreateView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [JSONParser]
 
-    def get(self, request, format=None):
+    def get(self, request, *args, **kwargs):
         if (request.user.profile.canManageAsset is False):
             return JsonResponse({'detail': 'Permission Denied'}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
@@ -43,7 +43,7 @@ class AssetCreateView(APIView):
                 'type': json.dumps(TYPE_CHOICE),
             }, status = status.HTTP_200_OK)
 
-    def post(self, request, format=None):
+    def post(self, request, *args, **kwargs):
         if (request.user.profile.canManageAsset is False):
             return JsonResponse({'detail': 'Permission Denied'}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
@@ -74,7 +74,7 @@ class AssetListView(APIView):
     # paginate_by = PAGE_COUNT
     # ordering = ['-purchaseDate']
 
-    def get(self, request, format=None):
+    def get(self, request, *args, **kwargs):
         if (request.user.profile.canManageAsset is False):
             return JsonResponse({'detail': 'Permission Denied'}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
@@ -94,7 +94,7 @@ class MyAssetListView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [JSONParser]
 
-    def get(self, request, format=None):
+    def get(self, request, *args, **kwargs):
         assetList = Asset.objects.filter(user=self.request.user)
         # calculating warranty last date
         for i in assetList:
@@ -118,7 +118,7 @@ class MyAssetListView(APIView):
                 'user_list': json.dumps(profileJsons),
             }, status = status.HTTP_200_OK)
 
-    def post(self, request, format=None):
+    def post(self, request, *args, **kwargs):
         if (request.data['pk']):
             asset = Asset.objects.get(pk=request.data['pk'])
             # logger.warning('assignee: {}'.format(request.data['pk']))
@@ -135,7 +135,7 @@ class MyPendingAssetListView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [JSONParser]
 
-    def get(self, request, format=None):
+    def get(self, request, *args, **kwargs):
         assetList = Asset.objects.filter(next_user=self.request.user)
         # calculating warranty last date
         for i in assetList:
@@ -148,7 +148,7 @@ class MyPendingAssetListView(APIView):
 
         return JsonResponse({'asset_list': json.dumps(assetJsons)}, status=status.HTTP_200_OK)
 
-    def post(self, request, format=None):
+    def post(self, request, *args, **kwargs):
         if (request.data['pk']):
             asset = Asset.objects.get(pk=request.data['pk'])
 
@@ -168,7 +168,7 @@ class MyPendingAssetListView(APIView):
         else:
             return JsonResponse({'detail': 'Asset assign failed'}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
-    def put(self, request, format=None):
+    def put(self, request, *args, **kwargs):
         if (request.data['pk']):
             asset = Asset.objects.get(pk=request.data['pk'])
 
