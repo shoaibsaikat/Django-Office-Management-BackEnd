@@ -119,8 +119,8 @@ class MyAssetListView(APIView):
             }, status = status.HTTP_200_OK)
 
     def post(self, request, format=None):
-        if (request.data['id']):
-            asset = Asset.objects.get(pk=request.data['id'])
+        if (request.data['pk']):
+            asset = Asset.objects.get(pk=request.data['pk'])
             # logger.warning('assignee: {}'.format(request.data['pk']))
             if (request.data['assignee']):
                 asset.next_user = User.objects.get(pk=request.data['assignee'])
@@ -165,6 +165,18 @@ class MyPendingAssetListView(APIView):
             return JsonResponse({'detail': 'Asset assigned'}, status=status.HTTP_200_OK)
         else:
             return JsonResponse({'detail': 'Asset assign failed'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+
+    def put(self, request, format=None):
+        if (request.data['pk']):
+            asset = Asset.objects.get(pk=request.data['pk'])
+
+            # declining asset transfer request
+            asset.next_user = None
+            asset.save()
+
+            return JsonResponse({'detail': 'Asset declined'}, status=status.HTTP_200_OK)
+        else:
+            return JsonResponse({'detail': 'Asset declination failed'}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
 class AssetUpdateView(APIView):
     permission_classes = [IsAuthenticated]
