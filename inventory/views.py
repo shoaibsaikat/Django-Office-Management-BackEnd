@@ -1,20 +1,18 @@
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.contrib.auth.decorators import login_required, user_passes_test
 from django.http import JsonResponse
-from django.views import View
-from django.views.decorators.csrf import csrf_protect
-from django.shortcuts import redirect
 from django.db import transaction
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.core import serializers
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
 from django.contrib.auth.models import User
+
+from rest_framework.decorators import api_view, permission_classes, parser_classes
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.parsers import JSONParser
+from rest_framework import status
 
 from datetime import datetime
 
-from . import forms
 from . import models
 
 import json
@@ -33,58 +31,60 @@ def get_paginated_date(page, list, count):
         pages = paginator.page(paginator.num_pages)
     return pages
 
-class InventoryListView(LoginRequiredMixin, UserPassesTestMixin, View):
+class InventoryListView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [JSONParser]
+
     def get(self, request, *args, **kwargs):
         inventoryList = models.Inventory.objects.all()
         # pagination
         page = request.GET.get('page', 1)
         inventories = get_paginated_date(page, inventoryList, PAGE_COUNT)
         inventoryJsons = [ob.as_json() for ob in inventories]
-        return JsonResponse({'inventory_list': json.dumps(inventoryJsons)}, status = 200)
+        return JsonResponse({'inventory_list': json.dumps(inventoryJsons)}, status=status.HTTP_200_OK)
 
-    def test_func(self):
-        return self.request.user.profile.canDistributeInventory or self.request.user.profile.canApproveInventory
+    # def test_func(self):
+    #     return self.request.user.profile.canDistributeInventory or self.request.user.profile.canApproveInventory
 
-@method_decorator(csrf_exempt, name='dispatch')
-class InventoryCreateView(LoginRequiredMixin, UserPassesTestMixin, View):
+class InventoryCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [JSONParser]
+
     def post(self, request, *args, **kwargs):
-        if (request.POST.get('name', False) and request.POST.get('description', False) and request.POST.get('unit', False) and
-            request.POST.get('count', False)):
-            inventory = models.Inventory()
-            inventory.name = request.POST['name']
-            inventory.description = request.POST['description']
-            inventory.unit = request.POST['unit']
-            inventory.count = int(request.POST['count'])
-            inventory.save()
-        else:
-            return JsonResponse({'message': 'Inventory creation failed'}, status = 400)
-        return redirect('inventory:list')
+        inventory = models.Inventory()
+        inventory.name = request.data['name']
+        inventory.description = request.data['description']
+        inventory.unit = request.data['unit']
+        inventory.count = int(request.data['count'])
+        inventory.save()
+        return JsonResponse({}, status=status.HTTP_200_OK)
 
-    def test_func(self):
-        return self.request.user.profile.canDistributeInventory or self.request.user.profile.canApproveInventory
+    # def test_func(self):
+    #     return self.request.user.profile.canDistributeInventory or self.request.user.profile.canApproveInventory
 
-@method_decorator(csrf_exempt, name='dispatch')
-class InventoryUpdateView(LoginRequiredMixin, UserPassesTestMixin, View):
+class InventoryUpdateView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [JSONParser]
+
     def get(self, request, *args, **kwargs):
         inventory = models.Inventory.objects.get(pk=kwargs['pk'])
-        return JsonResponse({'inventory': json.dumps(inventory.as_json())}, status = 200)
+        return JsonResponse({'inventory': json.dumps(inventory.as_json())}, status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
-        if (request.POST.get('description', False) and request.POST.get('unit', False) and request.POST.get('count', False)):
-            inventory = models.Inventory.objects.get(pk=kwargs['pk'])
-            inventory.description = request.POST['description']
-            inventory.unit = request.POST['unit']
-            inventory.count = request.POST['count']
-            inventory.save()
-        else:
-            return JsonResponse({'message': 'Inventory update failed'}, status = 400)
-        return JsonResponse({'message': 'Inventory updated'}, status = 200)
+        inventory = models.Inventory.objects.get(pk=kwargs['pk'])
+        inventory.description = request.data['description']
+        inventory.unit = request.data['unit']
+        inventory.count = request.data['count']
+        inventory.save()
+        return JsonResponse({'detail': 'Inventory updated'}, status=status.HTTP_200_OK)
 
-    def test_func(self):
-        return self.request.user.profile.canDistributeInventory or self.request.user.profile.canApproveInventory
+    # def test_func(self):
+    #     return self.request.user.profile.canDistributeInventory or self.request.user.profile.canApproveInventory
 
-@method_decorator(csrf_exempt, name='dispatch')
-class RequisitionCreateView(LoginRequiredMixin, View):
+class RequisitionCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [JSONParser]
+
     def get(self, request, *args, **kwargs):
         inventories = models.Inventory.objects.all()
         inventoryJsons = [ob.as_json() for ob in inventories]
@@ -94,33 +94,34 @@ class RequisitionCreateView(LoginRequiredMixin, View):
         for user in users:
             profiles.append(user.profile)
         profileJsons = [ob.as_json() for ob in profiles]
-        return JsonResponse({'inventory_list': json.dumps(inventoryJsons), 'approver_list': json.dumps(profileJsons)}, status = 200)
+        return JsonResponse({'inventory_list': json.dumps(inventoryJsons), 'approver_list': json.dumps(profileJsons)}, status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
-        if (request.POST.get('title', False) and request.POST.get('inventory', False) and request.POST.get('approver', False) and
-            request.POST.get('amount', False) and request.POST.get('comment', False)):
-            requisition = models.Requisition()
-            requisition.title = request.POST['title']
-            requisition.approver = models.User.objects.get(pk=int(request.POST['approver']))
-            requisition.inventory = models.Inventory.objects.get(pk=int(request.POST['inventory']))
-            requisition.amount = int(request.POST['amount'])
-            requisition.comment = request.POST['comment']
-            requisition.save()
-        else:
-            return JsonResponse({'message': 'Requisition creation failed'}, status = 400)
-        return redirect('inventory:my_requisition')
+        requisition = models.Requisition()
+        requisition.title = request.data['title']
+        requisition.approver = models.User.objects.get(pk=int(request.data['approver']))
+        requisition.inventory = models.Inventory.objects.get(pk=int(request.data['inventory']))
+        requisition.amount = int(request.data['amount'])
+        requisition.comment = request.data['comment']
+        requisition.save()
+        return JsonResponse({}, status=status.HTTP_200_OK)
 
-class MyRequisitionListView(LoginRequiredMixin, View):
+class MyRequisitionListView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [JSONParser]
+
     def get(self, request, *args, **kwargs):
         requisitionList = models.Requisition.objects.filter(user=self.request.user).order_by('-pk')
         # pagination
         page = request.GET.get('page', 1)
         requisitions = get_paginated_date(page, requisitionList, PAGE_COUNT)
         requisitionJsons = [ob.as_json() for ob in requisitions]
-        return JsonResponse({'requisition_list': json.dumps(requisitionJsons)}, status = 200)
+        return JsonResponse({'requisition_list': json.dumps(requisitionJsons)}, status=status.HTTP_200_OK)
 
-@method_decorator(csrf_exempt, name='dispatch')
-class RequisitionListView(LoginRequiredMixin, UserPassesTestMixin, View):
+class RequisitionListView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [JSONParser]
+
     def get(self, request, *args, **kwargs):
         requisitionList = models.Requisition.objects.filter(approver=self.request.user, approved=False).order_by('-pk')
         # pagination
@@ -134,23 +135,24 @@ class RequisitionListView(LoginRequiredMixin, UserPassesTestMixin, View):
         for user in users:
             profiles.append(user.profile)
         profileJsons = [ob.as_json() for ob in profiles]
-        return JsonResponse({'requisition_list': json.dumps(requisitionJsons), 'distributor_list': json.dumps(profileJsons)}, status = 200)
+        return JsonResponse({'requisition_list': json.dumps(requisitionJsons), 'distributor_list': json.dumps(profileJsons)}, status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
-        requisition = models.Requisition.objects.filter(pk=request.POST['pk']).first()
+        requisition = models.Requisition.objects.filter(pk=request.data['pk']).first()
         requisition.approved = True
 
-        if (request.POST.get('distributor', False)):
-            requisition.distributor = models.User.objects.filter(pk=request.POST['distributor']).first()
-            requisition.approveDate = datetime.now()
-            requisition.save()
-        return redirect('inventory:requisition_list')
+        requisition.distributor = models.User.objects.filter(pk=request.data['distributor']).first()
+        requisition.approveDate = datetime.now()
+        requisition.save()
+        return JsonResponse({}, status=status.HTTP_200_OK)
 
-    def test_func(self):
-        return self.request.user.profile.canApproveInventory
+    # def test_func(self):
+    #     return self.request.user.profile.canApproveInventory
 
-@method_decorator(csrf_exempt, name='dispatch')
-class RequisitionDetailFormView(LoginRequiredMixin, UserPassesTestMixin, View):
+class RequisitionDetailFormView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [JSONParser]
+
     def get(self, request, *args, **kwargs):
         requisition = models.Requisition.objects.filter(pk=kwargs['pk'], approver=self.request.user, approved=False).first()
         # generating distributor list for dropdown
@@ -162,80 +164,90 @@ class RequisitionDetailFormView(LoginRequiredMixin, UserPassesTestMixin, View):
         return JsonResponse({
             'requisition': json.dumps(None if requisition is None else requisition.as_json()),
             'distributor_list': json.dumps(profileJsons)},
-            status = 200)
+            status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
         requisition = models.Requisition.objects.get(pk=kwargs['pk'])
         requisition.approved = True
-        if (request.POST.get('distributor', False)):
-            requisition.distributor = models.User.objects.filter(pk=request.POST['distributor']).first()
-            requisition.approveDate = datetime.now()
-            requisition.save()
-        return redirect('inventory:requisition_list')
+        requisition.distributor = models.User.objects.filter(pk=request.data['distributor']).first()
+        requisition.approveDate = datetime.now()
+        requisition.save()
+        return JsonResponse({}, status=status.HTTP_200_OK)
 
-    def test_func(self):
-        return self.request.user.profile.canDistributeInventory or self.request.user.profile.canApproveInventory
+    # def test_func(self):
+    #     return self.request.user.profile.canDistributeInventory or self.request.user.profile.canApproveInventory
 
-class RequisitionDetailView(LoginRequiredMixin, UserPassesTestMixin, View):
+class RequisitionDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [JSONParser]
+
     def get(self, request, *args, **kwargs):
         requisition = models.Requisition.objects.get(pk=kwargs['pk'])
-        return JsonResponse({'requisition': json.dumps(requisition.as_json())}, status = 200)
+        return JsonResponse({'requisition': json.dumps(requisition.as_json())}, status=status.HTTP_200_OK)
 
-    def test_func(self):
-        return self.request.user.profile.canDistributeInventory or self.request.user.profile.canApproveInventory
+    # def test_func(self):
+    #     return self.request.user.profile.canDistributeInventory or self.request.user.profile.canApproveInventory
 
-class RequisitionApprovedListView(LoginRequiredMixin, UserPassesTestMixin, View):
+class RequisitionApprovedListView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [JSONParser]
+
     def get(self, request, *args, **kwargs):
         requisitionList = models.Requisition.objects.filter(distributor=self.request.user, distributed=False).order_by('-pk')
         # pagination
         page = request.GET.get('page', 1)
         requisitions = get_paginated_date(page, requisitionList, PAGE_COUNT)
         requisitionJsons = [ob.as_json() for ob in requisitions]
-        return JsonResponse({'requisition_list': json.dumps(requisitionJsons)}, status = 200)
+        return JsonResponse({'requisition_list': json.dumps(requisitionJsons)}, status=status.HTTP_200_OK)
 
-    def test_func(self):
-        return self.request.user.profile.canDistributeInventory
+    # def test_func(self):
+    #     return self.request.user.profile.canDistributeInventory
 
-class RequisitionHistoryList(LoginRequiredMixin, UserPassesTestMixin, View):
+class RequisitionHistoryList(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [JSONParser]
+
     def get(self, request, *args, **kwargs):
         requisitionList = models.Requisition.objects.all().order_by('-requestDate', '-pk')
         # pagination
         page = request.GET.get('page', 1)
         requisitions = get_paginated_date(page, requisitionList, PAGE_COUNT)
         requisitionJsons = [ob.as_json() for ob in requisitions]
-        return JsonResponse({'requisition_list': json.dumps(requisitionJsons)}, status = 200)
+        return JsonResponse({'requisition_list': json.dumps(requisitionJsons)}, status=status.HTTP_200_OK)
 
-    def test_func(self):
-        return self.request.user.profile.canDistributeInventory or self.request.user.profile.canApproveInventory
+    # def test_func(self):
+    #     return self.request.user.profile.canDistributeInventory or self.request.user.profile.canApproveInventory
 
-@csrf_protect
-@login_required
-@user_passes_test(lambda u: u.profile.canDistributeInventory)
+# @user_passes_test(lambda u: u.profile.canDistributeInventory)
 @transaction.atomic
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+@parser_classes([JSONParser])
 def requisitionDistribution(request, pk):
     requisition = models.Requisition.objects.filter(pk=pk).first()
     inventory = models.Inventory.objects.filter(pk=requisition.inventory.pk).first()
     if (inventory.count < requisition.amount):
-        return JsonResponse({'message': 'Distribution failed! Inventory low, please add items to the inventory first'}, status = 400)
+        return JsonResponse({'detail': 'Distribution failed! Inventory low, please add items to the inventory first'}, status=status.HTTP_406_NOT_ACCEPTABLE)
     else:
         requisition.distributed = True
         requisition.distributionDate = datetime.now()
         inventory.count = inventory.count - requisition.amount 
         requisition.save()
         inventory.save()
-    return redirect('inventory:requisition_approved_list')
+    return JsonResponse({}, status=status.HTTP_200_OK)
 
-@csrf_protect
-@login_required
-@user_passes_test(lambda u: u.profile.canDistributeInventory or u.profile.canApproveInventory)
+@permission_classes([IsAuthenticated])
+# @user_passes_test(lambda u: u.profile.canDistributeInventory or u.profile.canApproveInventory)
 def inventoryQuickEdit(request, pk, amount):
     item = models.Inventory.objects.get(pk=pk)
     item.count = amount
     item.save()
-    return redirect('inventory:list')
+    return JsonResponse({}, status=status.HTTP_200_OK)
 
+@api_view(['GET'])
+@parser_classes([JSONParser])
 def getInventoryList(request):
     if (request.is_ajax and request.method == 'GET'):
         list = models.Inventory.objects.all()
-        return JsonResponse({'inventory_list': serializers.serialize('json', list)}, status = 200)
-    return JsonResponse({}, status = 400)
+        return JsonResponse({'inventory_list': serializers.serialize('json', list)}, status=status.HTTP_200_OK)
+    return JsonResponse({}, status=status.HTTP_406_NOT_ACCEPTABLE)
