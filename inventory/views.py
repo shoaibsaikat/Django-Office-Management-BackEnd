@@ -31,6 +31,8 @@ def get_paginated_date(page, list, count):
         pages = paginator.page(paginator.num_pages)
     return pages
 
+# Inventory --------------------------------------------------------------------------------------------------------------------------------------
+
 class InventoryListView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [JSONParser]
@@ -80,6 +82,27 @@ class InventoryUpdateView(APIView):
 
     # def test_func(self):
     #     return self.request.user.profile.canDistributeInventory or self.request.user.profile.canApproveInventory
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def inventoryQuickEdit(request):
+    if (request.user.profile.canDistributeInventory is False and request.user.profile.canApproveInventory is False):
+        return JsonResponse({'detail': 'Permission denied.'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+
+    item = models.Inventory.objects.get(pk=request.data['pk'])
+    item.count = request.data['amount']
+    item.save()
+    return JsonResponse({'detail': 'Amount updated.'}, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+@parser_classes([JSONParser])
+def getInventoryList(request):
+    if (request.is_ajax and request.method == 'GET'):
+        list = models.Inventory.objects.all()
+        return JsonResponse({'inventory_list': serializers.serialize('json', list)}, status=status.HTTP_200_OK)
+    return JsonResponse({}, status=status.HTTP_406_NOT_ACCEPTABLE)
+
+# Requisition --------------------------------------------------------------------------------------------------------------------------------------
 
 class RequisitionCreateView(APIView):
     permission_classes = [IsAuthenticated]
@@ -236,22 +259,3 @@ def requisitionDistribution(request, pk):
         inventory.save()
     return JsonResponse({}, status=status.HTTP_200_OK)
 
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-@parser_classes([JSONParser])
-def inventoryQuickEdit(request):
-    if (request.user.profile.canDistributeInventory is False and request.user.profile.canApproveInventory is False):
-        return JsonResponse({'detail': 'Permission denied.'}, status=status.HTTP_406_NOT_ACCEPTABLE)
-
-    item = models.Inventory.objects.get(pk=request.data['pk'])
-    item.count = request.data['amount']
-    item.save()
-    return JsonResponse({'detail': 'Amount updated.'}, status=status.HTTP_200_OK)
-
-@api_view(['GET'])
-@parser_classes([JSONParser])
-def getInventoryList(request):
-    if (request.is_ajax and request.method == 'GET'):
-        list = models.Inventory.objects.all()
-        return JsonResponse({'inventory_list': serializers.serialize('json', list)}, status=status.HTTP_200_OK)
-    return JsonResponse({}, status=status.HTTP_406_NOT_ACCEPTABLE)
