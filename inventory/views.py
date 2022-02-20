@@ -53,16 +53,16 @@ class InventoryCreateView(APIView):
     parser_classes = [JSONParser]
 
     def post(self, request, *args, **kwargs):
+        if (request.user.profile.canDistributeInventory is False and request.user.profile.canApproveInventory is False):
+            return JsonResponse({'detail': 'Permission denied.'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+
         inventory = models.Inventory()
         inventory.name = request.data['name']
         inventory.description = request.data['description']
         inventory.unit = request.data['unit']
         inventory.count = int(request.data['count'])
         inventory.save()
-        return JsonResponse({}, status=status.HTTP_200_OK)
-
-    # def test_func(self):
-    #     return self.request.user.profile.canDistributeInventory or self.request.user.profile.canApproveInventory
+        return JsonResponse({'detail': 'Item created.'}, status=status.HTTP_200_OK)
 
 class InventoryUpdateView(APIView):
     permission_classes = [IsAuthenticated]
