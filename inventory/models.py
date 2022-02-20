@@ -44,7 +44,7 @@ class Requisition(models.Model):
 
     def as_json(self):
         return dict(
-            id=self.inventory.pk,
+            id=self.pk,
             user=self.user.pk,
             user_name=self.user.first_name + ' ' + self.user.last_name,
             name=self.inventory.name,
