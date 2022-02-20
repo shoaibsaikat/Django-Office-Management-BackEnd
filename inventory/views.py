@@ -96,10 +96,9 @@ def inventoryQuickEdit(request):
 @api_view(['GET'])
 @parser_classes([JSONParser])
 def getInventoryList(request):
-    if (request.is_ajax and request.method == 'GET'):
-        list = models.Inventory.objects.all()
-        return JsonResponse({'inventory_list': serializers.serialize('json', list)}, status=status.HTTP_200_OK)
-    return JsonResponse({}, status=status.HTTP_406_NOT_ACCEPTABLE)
+    inventoryList = models.Inventory.objects.all()
+    inventoryJsons = [ob.as_minimum_json() for ob in inventoryList]
+    return JsonResponse({'inventory_list': json.dumps(inventoryJsons)}, status=status.HTTP_200_OK)
 
 # Requisition --------------------------------------------------------------------------------------------------------------------------------------
 
@@ -126,7 +125,7 @@ class RequisitionCreateView(APIView):
         requisition.amount = int(request.data['amount'])
         requisition.comment = request.data['comment']
         requisition.save()
-        return JsonResponse({}, status=status.HTTP_200_OK)
+        return JsonResponse({'detail': 'Requisition created.'}, status=status.HTTP_200_OK)
 
 class MyRequisitionListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -145,6 +144,9 @@ class RequisitionListView(APIView):
     parser_classes = [JSONParser]
 
     def get(self, request, *args, **kwargs):
+        if (request.user.profile.canApproveInventory is False):
+            return JsonResponse({'detail': 'Permission denied.'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+
         requisitionList = models.Requisition.objects.filter(approver=self.request.user, approved=False).order_by('-pk')
         # pagination
         page = request.GET.get('page', 1)
@@ -160,22 +162,25 @@ class RequisitionListView(APIView):
         return JsonResponse({'requisition_list': json.dumps(requisitionJsons), 'distributor_list': json.dumps(profileJsons)}, status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
+        if (request.user.profile.canApproveInventory is False):
+            return JsonResponse({'detail': 'Permission denied.'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+
         requisition = models.Requisition.objects.filter(pk=request.data['pk']).first()
         requisition.approved = True
 
         requisition.distributor = models.User.objects.filter(pk=request.data['distributor']).first()
         requisition.approveDate = datetime.now()
         requisition.save()
-        return JsonResponse({}, status=status.HTTP_200_OK)
-
-    # def test_func(self):
-    #     return self.request.user.profile.canApproveInventory
+        return JsonResponse({'detail': 'Requisition approved.'}, status=status.HTTP_200_OK)
 
 class RequisitionDetailFormView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [JSONParser]
 
     def get(self, request, *args, **kwargs):
+        if (request.user.profile.canDistributeInventory is False and request.user.profile.canApproveInventory is False):
+            return JsonResponse({'detail': 'Permission denied.'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+
         requisition = models.Requisition.objects.filter(pk=kwargs['pk'], approver=self.request.user, approved=False).first()
         # generating distributor list for dropdown
         users = User.objects.all()
@@ -189,32 +194,35 @@ class RequisitionDetailFormView(APIView):
             status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
+        if (request.user.profile.canDistributeInventory is False and request.user.profile.canApproveInventory is False):
+            return JsonResponse({'detail': 'Permission denied.'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+
         requisition = models.Requisition.objects.get(pk=kwargs['pk'])
         requisition.approved = True
         requisition.distributor = models.User.objects.filter(pk=request.data['distributor']).first()
         requisition.approveDate = datetime.now()
         requisition.save()
-        return JsonResponse({}, status=status.HTTP_200_OK)
-
-    # def test_func(self):
-    #     return self.request.user.profile.canDistributeInventory or self.request.user.profile.canApproveInventory
+        return JsonResponse({'detail': 'Requisition approved.'}, status=status.HTTP_200_OK)
 
 class RequisitionDetailView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [JSONParser]
 
     def get(self, request, *args, **kwargs):
+        if (request.user.profile.canDistributeInventory is False and request.user.profile.canApproveInventory is False):
+            return JsonResponse({'detail': 'Permission denied.'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+
         requisition = models.Requisition.objects.get(pk=kwargs['pk'])
         return JsonResponse({'requisition': json.dumps(requisition.as_json())}, status=status.HTTP_200_OK)
-
-    # def test_func(self):
-    #     return self.request.user.profile.canDistributeInventory or self.request.user.profile.canApproveInventory
 
 class RequisitionApprovedListView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [JSONParser]
 
     def get(self, request, *args, **kwargs):
+        if (request.user.profile.canDistributeInventory is False):
+            return JsonResponse({'detail': 'Permission denied.'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+
         requisitionList = models.Requisition.objects.filter(distributor=self.request.user, distributed=False).order_by('-pk')
         # pagination
         page = request.GET.get('page', 1)
@@ -222,23 +230,20 @@ class RequisitionApprovedListView(APIView):
         requisitionJsons = [ob.as_json() for ob in requisitions]
         return JsonResponse({'requisition_list': json.dumps(requisitionJsons)}, status=status.HTTP_200_OK)
 
-    # def test_func(self):
-    #     return self.request.user.profile.canDistributeInventory
-
 class RequisitionHistoryList(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [JSONParser]
 
     def get(self, request, *args, **kwargs):
+        if (request.user.profile.canDistributeInventory is False and request.user.profile.canApproveInventory is False):
+            return JsonResponse({'detail': 'Permission denied.'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+
         requisitionList = models.Requisition.objects.all().order_by('-requestDate', '-pk')
         # pagination
         page = request.GET.get('page', 1)
         requisitions = get_paginated_date(page, requisitionList, PAGE_COUNT)
         requisitionJsons = [ob.as_json() for ob in requisitions]
         return JsonResponse({'requisition_list': json.dumps(requisitionJsons)}, status=status.HTTP_200_OK)
-
-    # def test_func(self):
-    #     return self.request.user.profile.canDistributeInventory or self.request.user.profile.canApproveInventory
 
 # @user_passes_test(lambda u: u.profile.canDistributeInventory)
 @transaction.atomic
@@ -256,5 +261,5 @@ def requisitionDistribution(request, pk):
         inventory.count = inventory.count - requisition.amount 
         requisition.save()
         inventory.save()
-    return JsonResponse({}, status=status.HTTP_200_OK)
+    return JsonResponse({'detail': 'Requisition distributed.'}, status=status.HTTP_200_OK)
 

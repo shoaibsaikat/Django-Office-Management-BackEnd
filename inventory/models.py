@@ -18,6 +18,13 @@ class Inventory(models.Model):
             count=self.count,
             description=self.description,)
 
+    def as_minimum_json(self):
+        return dict(
+            id=self.pk,
+            name=self.name,
+            unit=self.unit,
+            count=self.count,)
+
     def __str__(self):
         return self.name
 
@@ -37,19 +44,18 @@ class Requisition(models.Model):
 
     def as_json(self):
         return dict(
-            id=self.pk,
+            id=self.inventory.pk,
             name=self.inventory.name,
             unit=self.inventory.unit,
             count=self.inventory.count,
             approver=self.approver.pk if self.approver is not None else None,
             distributor=self.distributor.pk if self.distributor is not None else None,
             approved=self.approved,
-            approveDate=str(self.approveDate),
             distributed=self.distributed,
-            distributionDate=str(self.distributionDate),
             title=self.title,
             amount=self.amount,
-            comment=self.comment,)
+            comment=self.comment,
+            date=str(self.requestDate),)
 
     def __str__(self):
         return self.title
