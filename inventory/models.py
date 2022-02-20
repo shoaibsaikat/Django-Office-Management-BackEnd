@@ -45,11 +45,15 @@ class Requisition(models.Model):
     def as_json(self):
         return dict(
             id=self.inventory.pk,
+            user=self.user.pk,
+            user_name=self.user.first_name + ' ' + self.user.last_name,
             name=self.inventory.name,
             unit=self.inventory.unit,
             count=self.inventory.count,
             approver=self.approver.pk if self.approver is not None else None,
+            approver_name = self.approver.first_name + ' ' + self.approver.last_name if self.approver is not None else None,
             distributor=self.distributor.pk if self.distributor is not None else None,
+            distributor_name = self.distributor.first_name + ' ' + self.distributor.last_name if self.distributor is not None else None,
             approved=self.approved,
             distributed=self.distributed,
             title=self.title,
