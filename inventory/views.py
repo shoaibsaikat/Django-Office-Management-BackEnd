@@ -75,7 +75,6 @@ class InventoryUpdateView(APIView):
     def post(self, request, *args, **kwargs):
         inventory = models.Inventory.objects.get(pk=kwargs['pk'])
         inventory.description = request.data['description']
-        inventory.unit = request.data['unit']
         inventory.count = request.data['count']
         inventory.save()
         return JsonResponse({'detail': 'Inventory updated.'}, status=status.HTTP_200_OK)
