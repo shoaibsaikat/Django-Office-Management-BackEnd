@@ -1,5 +1,4 @@
 from django.http import JsonResponse
-from django.db import transaction
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import JsonResponse
 from django.contrib.auth.models import User
@@ -172,17 +171,6 @@ class RequisitionApprovalListView(APIView):
         requisition.save()
         return JsonResponse({'detail': 'Requisition approved.'}, status=status.HTTP_200_OK)
 
-class RequisitionDetailView(APIView):
-    permission_classes = [IsAuthenticated]
-    parser_classes = [JSONParser]
-
-    def get(self, request, *args, **kwargs):
-        if (request.user.profile.canDistributeInventory is False and request.user.profile.canApproveInventory is False):
-            return JsonResponse({'detail': 'Permission denied.'}, status=status.HTTP_406_NOT_ACCEPTABLE)
-
-        requisition = Requisition.objects.get(pk=kwargs['pk'])
-        return JsonResponse({'requisition': json.dumps(requisition.as_json())}, status=status.HTTP_200_OK)
-
 class RequisitionDistributionListView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [JSONParser]
@@ -216,6 +204,17 @@ class RequisitionDistributionListView(APIView):
             requisition.save()
             inventory.save()
         return JsonResponse({'detail': 'Requisition distributed.'}, status=status.HTTP_200_OK)
+
+class RequisitionDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [JSONParser]
+
+    def get(self, request, *args, **kwargs):
+        if (request.user.profile.canDistributeInventory is False and request.user.profile.canApproveInventory is False):
+            return JsonResponse({'detail': 'Permission denied.'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+
+        requisition = Requisition.objects.get(pk=kwargs['pk'])
+        return JsonResponse({'requisition': json.dumps(requisition.as_json())}, status=status.HTTP_200_OK)
 
 class RequisitionHistoryList(APIView):
     permission_classes = [IsAuthenticated]

@@ -49,7 +49,7 @@ class Requisition(models.Model):
             user_name=self.user.first_name + ' ' + self.user.last_name,
             item_name=self.inventory.name,
             unit=self.inventory.unit,
-            count=self.inventory.count,
+            total=self.inventory.count,
             approver=self.approver.pk if self.approver is not None else None,
             approver_name = self.approver.first_name + ' ' + self.approver.last_name if self.approver is not None else None,
             distributor=self.distributor.pk if self.distributor is not None else None,
