@@ -73,10 +73,8 @@ def change_manager(request):
     if request.method == 'POST':
         # change manager
         if (request.data['manager']):
-            pk = request.data['manager']
-            manager = User.objects.get(pk=pk)
             profile = Profile.objects.get(pk=request.user.pk)
-            profile.supervisor = manager
+            profile.supervisor = User.objects.get(pk=request.data['manager'])
             profile.save()
             return JsonResponse({'detail': 'Manager changed'}, status=status.HTTP_200_OK)
         else:
