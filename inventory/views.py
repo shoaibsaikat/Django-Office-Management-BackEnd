@@ -172,37 +172,6 @@ class RequisitionApprovalListView(APIView):
         requisition.save()
         return JsonResponse({'detail': 'Requisition approved.'}, status=status.HTTP_200_OK)
 
-class RequisitionDetailFormView(APIView):
-    permission_classes = [IsAuthenticated]
-    parser_classes = [JSONParser]
-
-    def get(self, request, *args, **kwargs):
-        if (request.user.profile.canDistributeInventory is False and request.user.profile.canApproveInventory is False):
-            return JsonResponse({'detail': 'Permission denied.'}, status=status.HTTP_406_NOT_ACCEPTABLE)
-
-        requisition = Requisition.objects.filter(pk=kwargs['pk'], approver=self.request.user, approved=False).first()
-        # generating distributor list for dropdown
-        users = User.objects.all()
-        profiles = []
-        for user in users:
-            profiles.append(user.profile)
-        profileJsons = [ob.as_json() for ob in profiles]
-        return JsonResponse({
-            'requisition': json.dumps(None if requisition is None else requisition.as_json()),
-            'distributor_list': json.dumps(profileJsons)},
-            status=status.HTTP_200_OK)
-
-    def post(self, request, *args, **kwargs):
-        if (request.user.profile.canDistributeInventory is False and request.user.profile.canApproveInventory is False):
-            return JsonResponse({'detail': 'Permission denied.'}, status=status.HTTP_406_NOT_ACCEPTABLE)
-
-        requisition = Requisition.objects.get(pk=kwargs['pk'])
-        requisition.approved = True
-        requisition.distributor = User.objects.filter(pk=request.data['distributor']).first()
-        requisition.approveDate = datetime.now()
-        requisition.save()
-        return JsonResponse({'detail': 'Requisition approved.'}, status=status.HTTP_200_OK)
-
 class RequisitionDetailView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [JSONParser]
@@ -214,7 +183,7 @@ class RequisitionDetailView(APIView):
         requisition = Requisition.objects.get(pk=kwargs['pk'])
         return JsonResponse({'requisition': json.dumps(requisition.as_json())}, status=status.HTTP_200_OK)
 
-class RequisitionApprovedListView(APIView):
+class RequisitionDistributionListView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [JSONParser]
 
@@ -228,6 +197,25 @@ class RequisitionApprovedListView(APIView):
         requisitions = get_paginated_date(page, requisitionList, PAGE_COUNT)
         requisitionJsons = [ob.as_json() for ob in requisitions]
         return JsonResponse({'requisition_list': json.dumps(requisitionJsons)}, status=status.HTTP_200_OK)
+
+    def post(self, request, *args, **kwargs):
+        if (request.user.profile.canDistributeInventory is False):
+            return JsonResponse({'detail': 'Permission denied.'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+
+        requisition = Requisition.objects.get(pk=request.data['pk'])
+        inventory = Inventory.objects.get(pk=requisition.inventory.pk)
+        if (inventory.count < requisition.amount):
+            return JsonResponse(
+                {'detail': 'Distribution failed! Inventory low, please add items to the inventory first.'},
+                status=status.HTTP_406_NOT_ACCEPTABLE
+            )
+        else:
+            requisition.distributed = True
+            requisition.distributionDate = datetime.now()
+            inventory.count = inventory.count - requisition.amount 
+            requisition.save()
+            inventory.save()
+        return JsonResponse({'detail': 'Requisition distributed.'}, status=status.HTTP_200_OK)
 
 class RequisitionHistoryList(APIView):
     permission_classes = [IsAuthenticated]
@@ -243,22 +231,3 @@ class RequisitionHistoryList(APIView):
         requisitions = get_paginated_date(page, requisitionList, PAGE_COUNT)
         requisitionJsons = [ob.as_json() for ob in requisitions]
         return JsonResponse({'requisition_list': json.dumps(requisitionJsons)}, status=status.HTTP_200_OK)
-
-# @user_passes_test(lambda u: u.profile.canDistributeInventory)
-@transaction.atomic
-@api_view(['GET', 'POST'])
-@permission_classes([IsAuthenticated])
-@parser_classes([JSONParser])
-def requisitionDistribution(request, pk):
-    requisition = Requisition.objects.filter(pk=pk).first()
-    inventory = Inventory.objects.filter(pk=requisition.inventory.pk).first()
-    if (inventory.count < requisition.amount):
-        return JsonResponse({'detail': 'Distribution failed! Inventory low, please add items to the inventory first.'}, status=status.HTTP_406_NOT_ACCEPTABLE)
-    else:
-        requisition.distributed = True
-        requisition.distributionDate = datetime.now()
-        inventory.count = inventory.count - requisition.amount 
-        requisition.save()
-        inventory.save()
-    return JsonResponse({'detail': 'Requisition distributed.'}, status=status.HTTP_200_OK)
-
