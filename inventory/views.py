@@ -94,7 +94,7 @@ def inventoryQuickEdit(request):
 
 @api_view(['GET'])
 @parser_classes([JSONParser])
-def getInventoryList(request):
+def getInventoryListForChart(request):
     inventoryList = Inventory.objects.all()
     inventoryJsons = [ob.as_minimum_json() for ob in inventoryList]
     return JsonResponse({'inventory_list': json.dumps(inventoryJsons)}, status=status.HTTP_200_OK)
@@ -139,7 +139,7 @@ class MyRequisitionListView(APIView):
         requisitionJsons = [ob.as_json() for ob in requisitions]
         return JsonResponse({'requisition_list': json.dumps(requisitionJsons)}, status=status.HTTP_200_OK)
 
-class RequisitionListView(APIView):
+class RequisitionApprovalListView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [JSONParser]
 
@@ -165,10 +165,9 @@ class RequisitionListView(APIView):
         if (request.user.profile.canApproveInventory is False):
             return JsonResponse({'detail': 'Permission denied.'}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
-        requisition = Requisition.objects.filter(pk=request.data['pk']).first()
+        requisition = Requisition.objects.get(pk=request.data['pk'])
         requisition.approved = True
-
-        requisition.distributor = User.objects.filter(pk=request.data['distributor']).first()
+        requisition.distributor = User.objects.get(pk=request.data['distributor'])
         requisition.approveDate = datetime.now()
         requisition.save()
         return JsonResponse({'detail': 'Requisition approved.'}, status=status.HTTP_200_OK)
