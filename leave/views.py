@@ -125,7 +125,7 @@ class LeaveSummaryListView(APIView):
         # returning custom dictionary
         leaveList = Leave.objects.filter(approved=True, startDate__gte=date(year, 1, 1), startDate__lte=date(year, 12, 31)) \
                         .values('user', 'user__first_name', 'user__last_name') \
-                        .annotate(days=Sum('dayCount'))
+                        .annotate(days=Sum('day_count'))
         # pagination
         page = request.GET.get('page', 1)
         leaves = get_paginated_date(page, leaveList, PAGE_COUNT)

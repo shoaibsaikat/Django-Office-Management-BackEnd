@@ -22,13 +22,13 @@ class Leave(models.Model):
             user=self.user.pk,
             user_first_name=self.user.first_name,
             user_last_name=self.user.last_name,
-            creationDate=str(self.creationDate),
+            creation_date=str(self.creationDate),
             approver=self.approver.pk,
             approved=self.approved,
-            approveDate=str(self.approveDate),
-            startDate=str(self.startDate),
-            endDate=str(self.endDate),
-            dayCount=self.dayCount,
+            approve_date=str(self.approveDate),
+            start_date=str(self.startDate),
+            end_date=str(self.endDate),
+            day_count=self.dayCount,
             comment=self.comment,)
 
     def __str__(self):
