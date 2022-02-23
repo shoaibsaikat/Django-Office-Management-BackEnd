@@ -125,13 +125,9 @@ class LeaveSummaryListView(APIView):
         # returning custom dictionary
         leaveList = Leave.objects.filter(approved=True, startDate__gte=date(year, 1, 1), startDate__lte=date(year, 12, 31)) \
                         .values('user', 'user__first_name', 'user__last_name') \
-                        .annotate(days=Sum('day_count'))
+                        .annotate(days=Sum('dayCount'))
         # pagination
         page = request.GET.get('page', 1)
         leaves = get_paginated_date(page, leaveList, PAGE_COUNT)
         leaveJsons = [str(i) for i in leaves]
-        return JsonResponse({
-                'leave_list': json.dumps(leaveJsons),
-                'year_list': json.dumps(YEAR_CHOICE),
-                'selected_year': year
-            }, status=status.HTTP_200_OK)
+        return JsonResponse({'leave_list': json.dumps(leaveJsons)}, status=status.HTTP_200_OK)
