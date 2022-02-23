@@ -54,7 +54,7 @@ class LeaveCreateView(APIView):
         return JsonResponse({'detail': 'Leave created'}, status=status.HTTP_200_OK)
 
 # my leaves
-class LeaveListView(APIView):
+class LeaveMyListView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [JSONParser]
 
