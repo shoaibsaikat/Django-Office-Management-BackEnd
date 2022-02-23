@@ -20,6 +20,8 @@ class Leave(models.Model):
             id=self.pk,
             title=self.title,
             user=self.user.pk,
+            user_first_name=self.user.first_name,
+            user_last_name=self.user.last_name,
             creationDate=str(self.creationDate),
             approver=self.approver.pk,
             approved=self.approved,
