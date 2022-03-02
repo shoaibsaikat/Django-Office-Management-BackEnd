@@ -32,4 +32,4 @@ class Leave(models.Model):
             comment=self.comment,)
 
     def __str__(self):
-        return super().__str__()
+        return self.title
