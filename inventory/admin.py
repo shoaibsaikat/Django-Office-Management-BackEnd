@@ -1,4 +1,3 @@
-from inventory.models import Inventory
 from django.contrib import admin
 
 from . import models
