@@ -35,7 +35,7 @@ def get_paginated_date(page, list, count):
 class LeaveCreateView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [JSONParser]
-    
+
     def get(self, request, *args, **kwargs):
         if self.request.user.profile.supervisor is None:
             return JsonResponse({'detail': 'Add manager first'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -46,8 +46,8 @@ class LeaveCreateView(APIView):
         leave.user = self.request.user
         leave.approver = self.request.user.profile.supervisor
         leave.title = request.data['title']
-        leave.startDate = datetime.fromtimestamp(int(request.data['start']))
-        leave.endDate = datetime.fromtimestamp(int(request.data['end']))
+        leave.startDate = datetime.strptime(request.data['start'], '%Y-%m-%d')
+        leave.endDate = datetime.strptime(request.data['end'], '%Y-%m-%d')
         leave.dayCount = int(request.data['days'])
         leave.comment = request.data['comment']
         leave.save()
@@ -126,6 +126,8 @@ class LeaveSummaryListView(APIView):
         leaveList = Leave.objects.filter(approved=True, startDate__gte=date(year, 1, 1), startDate__lte=date(year, 12, 31)) \
                         .values('user', 'user__first_name', 'user__last_name') \
                         .annotate(days=Sum('dayCount'))
+
+        # make custom dictionary list from queryset
         leaveDictionaryList = []
         for leave in leaveList:
             leaveDictionaryList.append({
