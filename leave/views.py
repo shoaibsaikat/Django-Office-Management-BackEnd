@@ -1,3 +1,4 @@
+from itertools import count
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Sum
 from django.http import JsonResponse
@@ -121,12 +122,15 @@ class LeaveSummaryListView(APIView):
         if (request.user.profile.canApproveLeave is False):
             return JsonResponse({'detail': 'Permission denied.'}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
+        page = int(request.GET.get('page', 1))
+        # print('got page: ' + str(page))
         year = kwargs['year']
         # returning custom dictionary
         leaveList = Leave.objects.filter(approved=True, startDate__gte=date(year, 1, 1), startDate__lte=date(year, 12, 31)) \
                         .values('user', 'user__first_name', 'user__last_name') \
                         .annotate(days=Sum('dayCount'))
-
+        listCount = len(leaveList)
+        leaveList = leaveList[(page - 1) * PAGE_COUNT : ((page - 1) * PAGE_COUNT) + PAGE_COUNT]
         # make custom dictionary list from queryset
         leaveDictionaryList = []
         for leave in leaveList:
@@ -141,9 +145,4 @@ class LeaveSummaryListView(APIView):
         #     for key in leaveDictionaryList[index]:
         #         print(leaveDictionaryList[index][key])
 
-        # TODO: pagination
-        # page = request.GET.get('page', 1)
-        # leaves = get_paginated_date(page, leaveDictionaryList, PAGE_COUNT)
-        # leaveJsons = [str(i) for i in leaves]
-
-        return JsonResponse({'leave_list': json.dumps(leaveDictionaryList)}, status=status.HTTP_200_OK)
+        return JsonResponse({'leave_list': json.dumps(leaveDictionaryList), 'count': listCount}, status=status.HTTP_200_OK)
