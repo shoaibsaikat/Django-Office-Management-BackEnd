@@ -1,5 +1,5 @@
 # Django-Office-Management-BackEnd
-Office Management System using Django Backend with REST api support.
+Office Management System using Django Backend with REST api support using Django Rest Framework.
 It can be consumed by different front-ends like Angular, React or Vue.js.
 
 Some requirements:
