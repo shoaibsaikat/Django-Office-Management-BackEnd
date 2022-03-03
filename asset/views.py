@@ -1,6 +1,5 @@
 from django.contrib.auth.models import User
 from django.http import JsonResponse
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
@@ -19,16 +18,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 PAGE_COUNT = 10
-
-def get_paginated_date(page, list, count):
-    paginator = Paginator(list, count)
-    try:
-        pages = paginator.page(page)
-    except PageNotAnInteger:
-        pages = paginator.page(1)
-    except EmptyPage:
-        pages = paginator.page(paginator.num_pages)
-    return pages
 
 class AssetCreateView(APIView):
     permission_classes = [IsAuthenticated]
@@ -70,9 +59,6 @@ class AssetCreateView(APIView):
 
 class AssetListView(APIView):
     permission_classes = [IsAuthenticated]
-    parser_classes = [JSONParser]
-    # paginate_by = PAGE_COUNT
-    # ordering = ['-purchaseDate']
 
     def get(self, request, *args, **kwargs):
         if (request.user.profile.canManageAsset is False):
@@ -81,12 +67,15 @@ class AssetListView(APIView):
         assetList = Asset.objects.all()
 
         # pagination
-        page = request.GET.get('page', 1)
-        assets = get_paginated_date(page, assetList, PAGE_COUNT)
-        assetJsons = [ob.as_json() for ob in assets]
+        page = int(request.GET.get('page', 1))
+        listCount = len(assetList)
+        assetList = assetList[(page - 1) * PAGE_COUNT : ((page - 1) * PAGE_COUNT) + PAGE_COUNT]
+        # json
+        assetJsons = [ob.as_json() for ob in assetList]
         return JsonResponse({
                 'status': json.dumps(STATUS_CHOICE),
                 'type': json.dumps(TYPE_CHOICE),
+                'count': listCount,
                 'asset_list': json.dumps(assetJsons),
             }, status=status.HTTP_200_OK)
 
@@ -101,10 +90,11 @@ class MyAssetListView(APIView):
             i.purchaseDate = i.purchaseDate + datetime.timedelta(days=i.warranty)
 
         # pagination
-        page = request.GET.get('page', 1)
-        # print('got page: ' + page)
-        assets = get_paginated_date(page, assetList, PAGE_COUNT)
-        assetJsons = [ob.as_json() for ob in assets]
+        page = int(request.GET.get('page', 1))
+        listCount = len(assetList)
+        assetList = assetList[(page - 1) * PAGE_COUNT : ((page - 1) * PAGE_COUNT) + PAGE_COUNT]
+        # json
+        assetJsons = [ob.as_json() for ob in assetList]
 
         # getting user list for dropdown
         users = User.objects.all()
@@ -116,6 +106,7 @@ class MyAssetListView(APIView):
         return JsonResponse({
                 'asset_list': json.dumps(assetJsons),
                 'user_list': json.dumps(profileJsons),
+                'count': listCount,
             }, status = status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
@@ -142,11 +133,13 @@ class MyPendingAssetListView(APIView):
             i.purchaseDate = i.purchaseDate + datetime.timedelta(days=i.warranty)
 
         # pagination
-        page = request.GET.get('page', 1)
-        assets = get_paginated_date(page, assetList, PAGE_COUNT)
-        assetJsons = [ob.as_json() for ob in assets]
+        page = int(request.GET.get('page', 1))
+        listCount = len(assetList)
+        assetList = assetList[(page - 1) * PAGE_COUNT : ((page - 1) * PAGE_COUNT) + PAGE_COUNT]
+        # json
+        assetJsons = [ob.as_json() for ob in assetList]
 
-        return JsonResponse({'asset_list': json.dumps(assetJsons)}, status=status.HTTP_200_OK)
+        return JsonResponse({'asset_list': json.dumps(assetJsons), 'count': listCount}, status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
         if (request.data['pk']):

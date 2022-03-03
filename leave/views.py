@@ -46,7 +46,7 @@ class LeaveMyListView(APIView):
         page = int(request.GET.get('page', 1))
         listCount = len(leaveList)
         leaveList = leaveList[(page - 1) * PAGE_COUNT : ((page - 1) * PAGE_COUNT) + PAGE_COUNT]
-
+        # json
         leaveJsons = [ob.as_json() for ob in leaveList]
         return JsonResponse({'leave_list': json.dumps(leaveJsons), 'count': listCount}, status=status.HTTP_200_OK)
 
@@ -63,6 +63,7 @@ class LeaveRequestListView(APIView):
         page = int(request.GET.get('page', 1))
         listCount = len(leaveList)
         leaveList = leaveList[(page - 1) * PAGE_COUNT : ((page - 1) * PAGE_COUNT) + PAGE_COUNT]
+        # json
         leaveJsons = [ob.as_json() for ob in leaveList]
         return JsonResponse({'leave_list': json.dumps(leaveJsons), 'count': listCount}, status=status.HTTP_200_OK)
 

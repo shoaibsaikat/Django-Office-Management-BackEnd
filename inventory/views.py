@@ -1,5 +1,4 @@
 from django.http import JsonResponse
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import JsonResponse
 from django.contrib.auth.models import User
 
@@ -19,21 +18,10 @@ logger = logging.getLogger(__name__)
 
 PAGE_COUNT = 10
 
-def get_paginated_date(page, list, count):
-    paginator = Paginator(list, count)
-    try:
-        pages = paginator.page(page)
-    except PageNotAnInteger:
-        pages = paginator.page(1)
-    except EmptyPage:
-        pages = paginator.page(paginator.num_pages)
-    return pages
-
-# Inventory --------------------------------------------------------------------------------------------------------------------------------------
+# Inventory --------------------------------------------------------------------------------------------------------------------
 
 class InventoryListView(APIView):
     permission_classes = [IsAuthenticated]
-    parser_classes = [JSONParser]
 
     def get(self, request, *args, **kwargs):
         if (request.user.profile.canDistributeInventory is False and request.user.profile.canApproveInventory is False):
@@ -41,10 +29,12 @@ class InventoryListView(APIView):
 
         inventoryList = Inventory.objects.all()
         # pagination
-        page = request.GET.get('page', 1)
-        inventories = get_paginated_date(page, inventoryList, PAGE_COUNT)
-        inventoryJsons = [ob.as_json() for ob in inventories]
-        return JsonResponse({'inventory_list': json.dumps(inventoryJsons)}, status=status.HTTP_200_OK)
+        page = int(request.GET.get('page', 1))
+        listCount = len(inventoryList)
+        inventoryList = inventoryList[(page - 1) * PAGE_COUNT : ((page - 1) * PAGE_COUNT) + PAGE_COUNT]
+        # json
+        inventoryJsons = [ob.as_json() for ob in inventoryList]
+        return JsonResponse({'inventory_list': json.dumps(inventoryJsons), 'count': listCount}, status=status.HTTP_200_OK)
 
 class InventoryCreateView(APIView):
     permission_classes = [IsAuthenticated]
@@ -92,13 +82,12 @@ def inventoryQuickEdit(request):
     return JsonResponse({'detail': 'Amount updated.'}, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
-@parser_classes([JSONParser])
 def getInventoryListForChart(request):
     inventoryList = Inventory.objects.all()
     inventoryJsons = [ob.as_minimum_json() for ob in inventoryList]
     return JsonResponse({'inventory_list': json.dumps(inventoryJsons)}, status=status.HTTP_200_OK)
 
-# Requisition --------------------------------------------------------------------------------------------------------------------------------------
+# Requisition ---------------------------------------------------------------------------------------------------------------------------
 
 class RequisitionCreateView(APIView):
     permission_classes = [IsAuthenticated]
@@ -128,15 +117,16 @@ class RequisitionCreateView(APIView):
 
 class MyRequisitionListView(APIView):
     permission_classes = [IsAuthenticated]
-    parser_classes = [JSONParser]
 
     def get(self, request, *args, **kwargs):
         requisitionList = Requisition.objects.filter(user=self.request.user).order_by('-pk')
         # pagination
-        page = request.GET.get('page', 1)
-        requisitions = get_paginated_date(page, requisitionList, PAGE_COUNT)
-        requisitionJsons = [ob.as_json() for ob in requisitions]
-        return JsonResponse({'requisition_list': json.dumps(requisitionJsons)}, status=status.HTTP_200_OK)
+        page = int(request.GET.get('page', 1))
+        listCount = len(requisitionList)
+        requisitionList = requisitionList[(page - 1) * PAGE_COUNT : ((page - 1) * PAGE_COUNT) + PAGE_COUNT]
+        # json
+        requisitionJsons = [ob.as_json() for ob in requisitionList]
+        return JsonResponse({'requisition_list': json.dumps(requisitionJsons), 'count': listCount}, status=status.HTTP_200_OK)
 
 class RequisitionApprovalListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -148,9 +138,11 @@ class RequisitionApprovalListView(APIView):
 
         requisitionList = Requisition.objects.filter(approver=self.request.user, approved=False).order_by('-pk')
         # pagination
-        page = request.GET.get('page', 1)
-        requisitions = get_paginated_date(page, requisitionList, PAGE_COUNT)
-        requisitionJsons = [ob.as_json() for ob in requisitions]
+        page = int(request.GET.get('page', 1))
+        listCount = len(requisitionList)
+        requisitionList = requisitionList[(page - 1) * PAGE_COUNT : ((page - 1) * PAGE_COUNT) + PAGE_COUNT]
+        # json
+        requisitionJsons = [ob.as_json() for ob in requisitionList]
 
         # generating distributor list for dropdown
         users = User.objects.all()
@@ -158,7 +150,11 @@ class RequisitionApprovalListView(APIView):
         for user in users:
             profiles.append(user.profile)
         profileJsons = [ob.as_json() for ob in profiles]
-        return JsonResponse({'requisition_list': json.dumps(requisitionJsons), 'distributor_list': json.dumps(profileJsons)}, status=status.HTTP_200_OK)
+        return JsonResponse({
+            'requisition_list': json.dumps(requisitionJsons),
+            'distributor_list': json.dumps(profileJsons),
+            'count': listCount
+            }, status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
         if (request.user.profile.canApproveInventory is False):
@@ -181,10 +177,12 @@ class RequisitionDistributionListView(APIView):
 
         requisitionList = Requisition.objects.filter(distributor=self.request.user, distributed=False).order_by('-pk')
         # pagination
-        page = request.GET.get('page', 1)
-        requisitions = get_paginated_date(page, requisitionList, PAGE_COUNT)
-        requisitionJsons = [ob.as_json() for ob in requisitions]
-        return JsonResponse({'requisition_list': json.dumps(requisitionJsons)}, status=status.HTTP_200_OK)
+        page = int(request.GET.get('page', 1))
+        listCount = len(requisitionList)
+        requisitionList = requisitionList[(page - 1) * PAGE_COUNT : ((page - 1) * PAGE_COUNT) + PAGE_COUNT]
+        # json
+        requisitionJsons = [ob.as_json() for ob in requisitionList]
+        return JsonResponse({'requisition_list': json.dumps(requisitionJsons), 'count': listCount}, status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
         if (request.user.profile.canDistributeInventory is False):
@@ -207,7 +205,6 @@ class RequisitionDistributionListView(APIView):
 
 class RequisitionDetailView(APIView):
     permission_classes = [IsAuthenticated]
-    parser_classes = [JSONParser]
 
     def get(self, request, *args, **kwargs):
         if (request.user.profile.canDistributeInventory is False and request.user.profile.canApproveInventory is False):
@@ -218,7 +215,6 @@ class RequisitionDetailView(APIView):
 
 class RequisitionHistoryList(APIView):
     permission_classes = [IsAuthenticated]
-    parser_classes = [JSONParser]
 
     def get(self, request, *args, **kwargs):
         if (request.user.profile.canDistributeInventory is False and request.user.profile.canApproveInventory is False):
@@ -226,7 +222,9 @@ class RequisitionHistoryList(APIView):
 
         requisitionList = Requisition.objects.all().order_by('-requestDate', '-pk')
         # pagination
-        page = request.GET.get('page', 1)
-        requisitions = get_paginated_date(page, requisitionList, PAGE_COUNT)
-        requisitionJsons = [ob.as_json() for ob in requisitions]
-        return JsonResponse({'requisition_list': json.dumps(requisitionJsons)}, status=status.HTTP_200_OK)
+        page = int(request.GET.get('page', 1))
+        listCount = len(requisitionList)
+        requisitionList = requisitionList[(page - 1) * PAGE_COUNT : ((page - 1) * PAGE_COUNT) + PAGE_COUNT]
+        # json
+        requisitionJsons = [ob.as_json() for ob in requisitionList]
+        return JsonResponse({'requisition_list': json.dumps(requisitionJsons), 'count': listCount}, status=status.HTTP_200_OK)
