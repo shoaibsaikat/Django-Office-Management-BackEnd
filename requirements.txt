@@ -17,6 +17,7 @@ markdown=3.3.6=pypi_0
 mysqlclient=2.0.3=pypi_0
 openssl=3.0.0=h8ffe710_2
 pip=20.2.4=py38_0
+pyjwt=2.3.0=pypi_0
 python=3.8.12=h900ac77_2_cpython
 python-tzdata=2021.5=pyhd8ed1ab_0
 python_abi=3.8=2_cp38
