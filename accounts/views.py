@@ -37,7 +37,7 @@ class UserView(APIView):
 def signout(request):
     if request.method == 'POST':
         # print('got header: ' + str(request.headers))
-        request.user.auth_token.delete()
+        # TODO: blacklist token, future implementation
         return JsonResponse({'detail': 'User signed out'}, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
