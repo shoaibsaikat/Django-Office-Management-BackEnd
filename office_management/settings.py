@@ -30,14 +30,12 @@ ALLOWED_HOSTS = []
 
 # CORS
 
-# ALLOWED_HOSTS=['*']
-# CORS_ORIGIN_ALLOW_ALL = True
-
 CORS_ORIGIN_ALLOW_ALL = False
 CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1',
     'http://localhost:4200',
 ]
+CORS_ALLOW_CREDENTIALS = True
 
 # CSRF
 
@@ -46,13 +44,12 @@ CSRF_TRUSTED_ORIGINS = [
     'http://localhost:4200',
 ]
 
-# Django REST framework
+# REST_FRAMEWORK
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.BasicAuthentication',
-        'rest_framework.authentication.TokenAuthentication',
-    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
 }
 
 # Application definition
@@ -70,7 +67,8 @@ INSTALLED_APPS = [
     'leave.apps.LeaveConfig',
     'asset.apps.AssetConfig',
     'rest_framework',
-    'rest_framework.authtoken',
+    # 'rest_framework.authtoken',
+    # to remove authtoken first run, 'python manage.py migrate authtoken zero'
 ]
 
 MIDDLEWARE = [

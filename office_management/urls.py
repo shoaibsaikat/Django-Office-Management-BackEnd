@@ -20,8 +20,6 @@ from django.urls.conf import include
 from . import views
 
 urlpatterns = [
-    # path('', views.IndexPage, name='index'),
-    path('api-auth/', include('rest_framework.urls')),
     path('admin/', admin.site.urls),
     path('user/', include('accounts.urls')),
     path('inventory/', include('inventory.urls')),

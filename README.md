@@ -9,6 +9,9 @@ Some requirements:
 For Django REST Framework:
 1. pip install djangorestframework
 
+For JWT:
+1. pip install djangorestframework-simplejwt
+
 Note: To generate requirement.txt file -> conda list -e > requirements.txt
 
 Frontend Project:
