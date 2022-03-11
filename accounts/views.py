@@ -16,18 +16,14 @@ import json
 
 from .models import Profile
 
-class SignInView(ObtainAuthToken):
-    def post(self, request, *args, **kwargs):
-        user = None
-        if (request.POST.get('username', False) and request.POST.get('password', False)):
-            user = authenticate(request, username=request.POST['username'], password=request.POST['password'])
-        else:
-            return JsonResponse({'detail': 'No credential sent'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+class UserView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [JSONParser]
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
         if (user is not None):
-            login(request, user)
-            token, created = Token.objects.get_or_create(user=user)
             userDict = user.profile.as_json()
-            userDict['token'] = token.key
             return JsonResponse(userDict, status=status.HTTP_200_OK)
             # status is optional
         else:
