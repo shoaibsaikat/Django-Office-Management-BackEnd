@@ -16,3 +16,4 @@ Note: To generate requirement.txt file -> conda list -e > requirements.txt
 
 Frontend Project:
 1. https://github.com/shoaibsaikat/Angular-Office-Management
+Note: django_jwt branch need to be used.
