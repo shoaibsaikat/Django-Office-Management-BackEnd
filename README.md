@@ -12,7 +12,9 @@ For Django REST Framework:
 For JWT:
 1. pip install djangorestframework-simplejwt
 
-Note: To generate requirement.txt file -> conda list -e > requirements.txt
+Note:
+1. To generate spec list file -> conda list --explicit > spec-file.txt
+2. to update all write conda update -all
 
 Frontend Project:
 1. https://github.com/shoaibsaikat/Angular-Office-Management
