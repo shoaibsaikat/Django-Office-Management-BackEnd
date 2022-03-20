@@ -37,7 +37,7 @@ Note:
 1. To generate spec list file -> conda list --explicit > <file_name>.txt
 2. To generate environment.yml file -> conda env export --name <environment_name> > <file_name>.yml
 3. To generate requirements.txt file -> pip freeze > requirements.txt or conda list -e > requirements.txt and to create a new environment pip install -r requirements.txt or conda create --name <env_name> --file requirements.txt
-3. to update all packages -> conda update -all
+4. to update all packages -> conda update -all
 
 Frontend Project:
 1. https://github.com/shoaibsaikat/Angular-Office-Management
