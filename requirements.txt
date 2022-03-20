@@ -1,0 +1,30 @@
+asgiref @ file:///home/conda/feedstock_root/build_artifacts/asgiref_1642912811357/work
+backports.zoneinfo @ file:///D:/bld/backports.zoneinfo_1629669834940/work
+beautifulsoup4==4.9.3
+cffi==1.14.5
+charset-normalizer==2.0.6
+Django @ file:///D:/bld/django_1646775810527/work
+django-bootstrap5==21.3
+django-braces==1.14.0
+django-cors-headers==3.10.0
+django-filter==21.1
+djangorestframework==3.13.1
+djangorestframework-simplejwt==5.1.0
+docopt==0.6.2
+idna==3.2
+importlib-metadata==4.10.1
+Markdown==3.3.6
+mysqlclient==2.0.3
+pipreqs==0.4.10
+pycparser==2.20
+PyJWT==2.3.0
+pytz==2022.1
+requests==2.26.0
+six==1.16.0
+soupsieve==2.2.1
+sqlparse @ file:///home/conda/feedstock_root/build_artifacts/sqlparse_1631317292236/work
+typing_extensions @ file:///home/conda/feedstock_root/build_artifacts/typing_extensions_1644850595256/work
+tzdata @ file:///home/conda/feedstock_root/build_artifacts/python-tzdata_1647621564023/work
+urllib3==1.26.7
+yarg==0.1.9
+zipp==3.5.0
