@@ -22,9 +22,6 @@ Some requirements:
 For Django REST Framework:
 1. pip install djangorestframework
 
-For JWT:
-1. pip install djangorestframework-simplejwt
-
 To use Conda-Forge:
 1. conda --version
 2. conda update conda
