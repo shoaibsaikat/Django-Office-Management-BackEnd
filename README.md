@@ -3,6 +3,8 @@ A simple office management system using Django.
 Office Management System using Django Backend with REST api support using Django REST Framework.
 It can be consumed by different front-ends like Angular, React or Vue.js.
 
+This branch supports JWT based authentication.
+
 # Features
 1. Own account management
 2. Inventory management
