@@ -32,4 +32,5 @@ urlpatterns = [
     path('api/inventory/', include('inventory.urls')),
     path('api/leave/', include('leave.urls')),
     path('api/asset/', include('asset.urls')),
+    path('api/driver/', include('driver.urls')),
 ]

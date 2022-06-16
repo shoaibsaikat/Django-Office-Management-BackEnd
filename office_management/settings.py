@@ -100,6 +100,7 @@ INSTALLED_APPS = [
     'inventory.apps.InventoryConfig',
     'leave.apps.LeaveConfig',
     'asset.apps.AssetConfig',
+    'driver.apps.DriverConfig',
     'rest_framework',
     # 'rest_framework.authtoken',
     # to remove authtoken first run, 'python manage.py migrate authtoken zero'

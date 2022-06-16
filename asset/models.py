@@ -9,6 +9,7 @@ TYPE_CHOICE = (
     (1, 'Desktop'),
     (2, 'Laptop'),
     (3, 'Printer'),
+    (50, 'Car'),
 )
 
 STATUS_CHOICE = (
