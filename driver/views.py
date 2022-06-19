@@ -15,6 +15,8 @@ from .models import Route, RouteUser
 
 import json
 
+PAGE_COUNT = 10
+
 class DriverUpdateView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [JSONParser]
@@ -30,3 +32,19 @@ class DriverUpdateView(APIView):
         # inventory.count = int(request.data['count'])
         # inventory.save()
         return JsonResponse({'detail': 'Item created.'}, status=status.HTTP_200_OK)
+
+class DriverListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        if (request.user.profile.canManageDriver is False):
+            return JsonResponse({'detail': 'Permission denied.'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+
+        driverList = Profile.objects.filter(type=3)
+        # pagination
+        page = int(request.GET.get('page', 1))
+        listCount = len(driverList)
+        driverList = driverList[(page - 1) * PAGE_COUNT : ((page - 1) * PAGE_COUNT) + PAGE_COUNT]
+        # json
+        driverJsons = [ob.as_json() for ob in driverList]
+        return JsonResponse({'driver_list': json.dumps(driverJsons), 'count': listCount}, status=status.HTTP_200_OK)

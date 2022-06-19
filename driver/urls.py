@@ -5,5 +5,5 @@ from . import views
 app_name = 'driver'
 
 urlpatterns = [
-    # path('create/', views.LeaveCreateView.as_view(), name='create'),
+    path('list/', views.DriverListView.as_view(), name='list'),
 ]
