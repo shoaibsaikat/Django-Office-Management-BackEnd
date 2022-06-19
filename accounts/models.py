@@ -20,8 +20,8 @@ class Profile(models.Model):
     canApproveInventory = models.BooleanField(default=False, blank=True)
     canApproveLeave = models.BooleanField(default=False, blank=True)
     canManageAsset = models.BooleanField(default=False, blank=True)
-    phone1 = models.PositiveBigIntegerField(default=None, blank=True)
-    phone2 = models.PositiveBigIntegerField(default=None, blank=True)
+    phone1 = models.PositiveBigIntegerField(default=None, null=True, blank=True)
+    phone2 = models.PositiveBigIntegerField(default=None, null=True, blank=True)
     type = models.PositiveSmallIntegerField(choices=TYPE_CHOICE, default=0)
     image = models.TextField(default='', blank=True)
 
