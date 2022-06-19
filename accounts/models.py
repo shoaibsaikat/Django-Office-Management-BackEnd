@@ -20,6 +20,7 @@ class Profile(models.Model):
     canApproveInventory = models.BooleanField(default=False, blank=True)
     canApproveLeave = models.BooleanField(default=False, blank=True)
     canManageAsset = models.BooleanField(default=False, blank=True)
+    canManageDriver = models.BooleanField(default=False, blank=True)
     phone1 = models.PositiveBigIntegerField(default=None, null=True, blank=True)
     phone2 = models.PositiveBigIntegerField(default=None, null=True, blank=True)
     type = models.PositiveSmallIntegerField(choices=TYPE_CHOICE, default=0)
