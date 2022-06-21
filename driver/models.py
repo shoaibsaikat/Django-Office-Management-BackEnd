@@ -6,8 +6,8 @@ from asset.models import Asset
 
 class Route(models.Model):
     name = models.CharField(max_length=255, blank=False)
-    driver = models.ForeignKey(User, on_delete=CASCADE, blank=False, related_name='drivers')
-    car = models.ForeignKey(Asset, on_delete=CASCADE, blank=False, related_name='cars')
+    driver = models.ForeignKey(User, on_delete=CASCADE, null=True, related_name='drivers')
+    car = models.ForeignKey(Asset, on_delete=CASCADE, null=True, related_name='cars')
     creationDate = models.DateTimeField(auto_now_add=True)
     description = models.TextField(default='', blank=False)
     active = models.BooleanField(default=False, blank=False)
