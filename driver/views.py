@@ -1,3 +1,4 @@
+from lib2to3.pgen2 import driver
 from django.http import JsonResponse
 from django.http import JsonResponse
 from django.contrib.auth.models import User
@@ -25,13 +26,15 @@ class DriverUpdateView(APIView):
         if (request.user.profile.canManageDriver is False):
             return JsonResponse({'detail': 'Permission denied.'}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
-        # inventory = Inventory()
-        # inventory.name = request.data['name']
-        # inventory.description = request.data['description']
-        # inventory.unit = request.data['unit']
-        # inventory.count = int(request.data['count'])
-        # inventory.save()
-        return JsonResponse({'detail': 'Item created.'}, status=status.HTTP_200_OK)
+        driver = Profile.objects.get(user__pk=kwargs['pk'])
+        if driver is not None:
+            driver.phone1 = request.data['phone1']
+            # driver.phone2 = request.data['phone2']
+            # driver.image = request.data['image']
+            driver.save()
+            return JsonResponse({'detail': 'Driver info updated.'}, status=status.HTTP_200_OK)
+        else:
+            return JsonResponse({'detail': 'Invalid driver.'}, status=status.HTTP_404_NOT_FOUND)
 
 class DriverListView(APIView):
     permission_classes = [IsAuthenticated]
