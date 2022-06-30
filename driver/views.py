@@ -29,8 +29,12 @@ class DriverUpdateView(APIView):
         driver = Profile.objects.get(user__pk=kwargs['pk'])
         if driver is not None:
             driver.phone1 = request.data['phone1']
-            # driver.phone2 = request.data['phone2']
-            # driver.image = request.data['image']
+            phone2 = request.data['phone2']
+            if phone2 != '':
+                driver.phone2 = request.data['phone2']
+            image = request.data['image']
+            if image != '':
+                driver.image = request.data['image']
             driver.save()
             return JsonResponse({'detail': 'Driver info updated.'}, status=status.HTTP_200_OK)
         else:
